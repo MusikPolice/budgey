@@ -1,54 +1,43 @@
 package ca.jonathanfritz.budgey.commands;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 import ca.jonathanfritz.budgey.Transaction;
 import ca.jonathanfritz.budgey.importer.CSVImporter;
 import ca.jonathanfritz.budgey.importer.CSVParser;
 import ca.jonathanfritz.budgey.importer.RoyalBankCSVParser;
 import ca.jonathanfritz.budgey.importer.ScotiabankCSVParser;
-import io.dropwizard.cli.Command;
-import io.dropwizard.setup.Bootstrap;
-import net.sourceforge.argparse4j.inf.Namespace;
-import net.sourceforge.argparse4j.inf.Subparser;
+import ca.jonathanfritz.budgey.ui.Command;
+import ca.jonathanfritz.budgey.ui.ParameterSet;
+import ca.jonathanfritz.budgey.ui.ParameterSet.Parameter;
 
-import java.util.List;
-
-public class ImportCommand extends Command {
+public class ImportCommand implements Command {
 
 	private static final String PARSER_KEY = "parser";
-
-	private static final String ROYAL_BANK_PARSER = "royal";
-
-	private static final String SCOTIA_BANK_PARSER = "scotia";
-
 	private static final String FILE_KEY = "file";
 
-	public ImportCommand() {
-		super("import", "Import transactions.");
+	private static final String ROYAL_BANK_PARSER = "royal";
+	private static final String SCOTIA_BANK_PARSER = "scotia";
+
+	@Override
+	public String getName() {
+		return "import";
 	}
 
 	@Override
-	public void configure(final Subparser subparser) {
-
-		subparser.addArgument(String.format("-%s", PARSER_KEY.charAt(0)), String.format("--%s", PARSER_KEY))
-				.dest(PARSER_KEY)
-				.type(String.class)
-				.setDefault(ROYAL_BANK_PARSER)
-				.required(true)
-				.help("The parser to use. [royal, scotia]");
-
-		subparser.addArgument(String.format("-%s", FILE_KEY.charAt(0)), String.format("--%s", FILE_KEY))
-				.dest(FILE_KEY)
-				.type(String.class)
-				.required(true)
-				.help("The transaction file to import. [path/to/file.csv]");
-
+	public ParameterSet getParameterSet() {
+		final List<Parameter> parameters = new ArrayList<>();
+		parameters.add(new Parameter(PARSER_KEY, String.class));
+		parameters.add(new Parameter(FILE_KEY, String.class));
+		return new ParameterSet(parameters);
 	}
 
 	@Override
-	public void run(final Bootstrap<?> bootstrap, final Namespace namespace) throws Exception {
-
-		final String parserOption = namespace.getString(PARSER_KEY);
-		final String file = namespace.getString(FILE_KEY);
+	public void execute(ParameterSet parameters) {
+		final String parserOption = parameters.getParameterValue(PARSER_KEY, String.class);
+		final String file = parameters.getParameterValue(FILE_KEY, String.class);
 
 		CSVParser parser;
 
@@ -63,12 +52,15 @@ public class ImportCommand extends Command {
 		}
 
 		final CSVImporter<CSVParser> csvImporter = new CSVImporter<>(parser);
-		final List<Transaction> transactions = csvImporter.importFile(file);
+		List<Transaction> transactions;
+		try {
+			transactions = csvImporter.importFile(file);
+		} catch (final IOException e) {
+			throw new RuntimeException("Failed to import file", e);
+		}
 
 		for (final Transaction t : transactions) {
 			System.out.println(t.toString());
 		}
-
 	}
-
 }

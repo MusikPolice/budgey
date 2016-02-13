@@ -31,6 +31,11 @@ public class RoyalBankCSVParser implements CSVParser {
 
 	@Override
 	public Transaction parse(String[] fields) {
+		// try to discard headers
+		if ("Account Type".equals(fields[0])) {
+			return null;
+		}
+
 		String description = fields[4];
 		if (!StringUtils.isBlank(fields[5])) {
 			description += ". " + fields[5];

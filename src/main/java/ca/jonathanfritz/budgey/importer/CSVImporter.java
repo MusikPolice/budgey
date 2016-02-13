@@ -20,14 +20,21 @@ public class CSVImporter<T extends CSVParser> {
 	}
 
 	public List<Transaction> importFile(String path) throws FileNotFoundException, IOException {
+		final String absolutePath = path = path.replaceFirst("^~", System.getProperty("user.home"));
+
 		final List<Transaction> transactions = new ArrayList<>();
-		try (FileReader file = new FileReader(path)) {
+		try (FileReader file = new FileReader(absolutePath)) {
 			try (BufferedReader reader = new BufferedReader(file)) {
 				String line = reader.readLine();
 				while (StringUtils.isNotBlank(line)) {
 					try {
 						final String[] fields = FieldSanitizer.sanitizeFields(line.split(","));
-						transactions.add(parser.parse(fields));
+						final Transaction transaction = parser.parse(fields);
+						if (transaction != null) {
+							transactions.add(transaction);
+							continue;
+						}
+						System.out.println("Dropped line " + line);
 					} catch (final Throwable t) {
 						System.out.println("Dropped line " + line);
 						t.printStackTrace();
