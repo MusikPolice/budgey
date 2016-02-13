@@ -1,21 +1,20 @@
 package ca.jonathanfritz.budgey.importer;
 
+import ca.jonathanfritz.budgey.Transaction;
+import com.google.common.base.Joiner;
+import org.apache.commons.lang3.StringUtils;
+import org.joda.money.CurrencyUnit;
+import org.joda.money.Money;
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.DateTimeFormatterBuilder;
+
 import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.Locale;
 
-import org.apache.commons.lang3.StringUtils;
-import org.joda.money.CurrencyUnit;
-import org.joda.money.Money;
-import org.joda.time.format.DateTimeFormatter;
-import org.joda.time.format.DateTimeFormatterBuilder;
-
-import ca.jonathanfritz.budgey.Transaction;
-
-import com.google.common.base.Joiner;
-
-public class RoyalBankCSVParser implements CSVParser {
+public class RoyalBankCSVParser extends AbstractCSVParser implements CSVParser {
 
 	// date format is 10/13/2015
 	private final DateTimeFormatter formatter = new DateTimeFormatterBuilder()
@@ -54,10 +53,13 @@ public class RoyalBankCSVParser implements CSVParser {
 			throw new RuntimeException("Failed to parse transaction [" + Joiner.on(",").join(fields) + "]", e);
 		}
 
+		final DateTime date = formatter.parseDateTime(fields[2]);
+
 		return Transaction
 		        .newBuilder()
 		        .setAccountNumber(fields[1])
-		        .setTransactionDate(formatter.parseDateTime(fields[2]))
+		        .setTransactionDate(date)
+		        .setOrder(this.getOrderForDate(date))
 		        .setDescription(description)
 		        .setAmount(amount)
 		        .build();

@@ -21,6 +21,7 @@ public class ImportCommand implements Command {
 
 	private static final String PARSER_KEY = "parser";
 	private static final String FILE_KEY = "file";
+	private static final String ACCOUNT_KEY = "account";
 
 	private static final String ROYAL_BANK_PARSER = "royal";
 	private static final String SCOTIA_BANK_PARSER = "scotia";
@@ -44,8 +45,9 @@ public class ImportCommand implements Command {
 	public ParameterSet getParameterSet() {
 		final List<Parameter> parameters = new ArrayList<>();
 		parameters.add(new Parameter(PARSER_KEY, "the name of the parser to use [" + ROYAL_BANK_PARSER + ", "
-				+ SCOTIA_BANK_PARSER + "]", String.class));
+		        + SCOTIA_BANK_PARSER + "]", String.class));
 		parameters.add(new Parameter(FILE_KEY, "the path to the file to import", String.class));
+		parameters.add(new Parameter(ACCOUNT_KEY, "Account number. [1234]", String.class));
 		return new ParameterSet(parameters);
 	}
 
@@ -53,6 +55,7 @@ public class ImportCommand implements Command {
 	public void execute(ParameterSet parameters) {
 		final String parserOption = parameters.getParameterValue(PARSER_KEY, String.class);
 		final String file = parameters.getParameterValue(FILE_KEY, String.class);
+		final String account = parameters.getParameterValue(ACCOUNT_KEY, String.class);
 
 		CSVParser parser;
 
@@ -62,7 +65,7 @@ public class ImportCommand implements Command {
 				parser = new RoyalBankCSVParser();
 				break;
 			case SCOTIA_BANK_PARSER:
-				parser = new ScotiabankCSVParser();
+				parser = new ScotiabankCSVParser(account);
 				break;
 		}
 

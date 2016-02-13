@@ -10,12 +10,14 @@ import org.joda.time.DateTime;
 public class Transaction {
 	private final String accountNumber;
 	private final DateTime transactionDate;
+	private final int order;
 	private final String description;
 	private final Money amount;
 
 	private Transaction(Builder builder) {
 		accountNumber = builder.accountNumber;
 		transactionDate = builder.transactionDate;
+		order = builder.order;
 		description = builder.description;
 		amount = builder.amount;
 	}
@@ -33,6 +35,14 @@ public class Transaction {
 	 */
 	public DateTime getTransactionDate() {
 		return transactionDate;
+	}
+
+	/**
+	 * @return for transactions that occur on the same date and don't have the required precision, this field
+	 *         infers an ordering from the order they were received from the financial institution
+	 */
+	public int getOrder() {
+		return order;
 	}
 
 	/**
@@ -61,6 +71,7 @@ public class Transaction {
 	public static class Builder {
 		private String accountNumber;
 		private DateTime transactionDate;
+		private int order;
 		private String description;
 		private Money amount;
 
@@ -78,6 +89,15 @@ public class Transaction {
 		 */
 		public Builder setTransactionDate(DateTime transactionDate) {
 			this.transactionDate = transactionDate;
+			return this;
+		}
+
+		/**
+		 * @param order for transactions that occur on the same date and don't have the required precision, this field
+		 *         infers an ordering from the order they were received from the financial institution
+		 */
+		public Builder setOrder(int order) {
+			this.order = order;
 			return this;
 		}
 
