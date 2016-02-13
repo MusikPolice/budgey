@@ -5,16 +5,15 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 public class ParameterSet {
 
-	private final Map<String, Class<?>> types = new HashMap<>();
+	private final Map<String, Parameter> types = new HashMap<>();
 	private final Map<String, Object> values = new HashMap<>();
 
 	public ParameterSet(Collection<Parameter> parameters) {
 		for (final Parameter p : parameters) {
-			types.put(p.name, p.type);
+			types.put(p.name, p);
 			values.put(p.name, null);
 		}
 	}
@@ -29,7 +28,7 @@ public class ParameterSet {
 
 	private <T> void setParameterValue(String name, Object value, Class<T> type) {
 		if (types.containsKey(name)) {
-			if (types.get(name) == type) {
+			if (types.get(name).type == type) {
 				values.put(name, value);
 				return;
 			}
@@ -39,16 +38,12 @@ public class ParameterSet {
 	}
 
 	public List<Parameter> getParameters() {
-		final List<Parameter> parameters = new ArrayList<Parameter>();
-		for (final Entry<String, Class<?>> entry : types.entrySet()) {
-			parameters.add(new Parameter(entry.getKey(), entry.getValue()));
-		}
-		return parameters;
+		return new ArrayList<>(types.values());
 	}
 
 	@SuppressWarnings("unchecked")
 	public <T> T getParameterValue(String name, Class<T> type) {
-		if (types.containsKey(name) && types.get(name) == type) {
+		if (types.containsKey(name) && types.get(name).type == type) {
 			if (values.containsKey(name)) {
 				return (T) values.get(name);
 			}
@@ -59,9 +54,11 @@ public class ParameterSet {
 	public static class Parameter {
 		private final Class<?> type;
 		private final String name;
+		private final String description;
 
-		public Parameter(String name, Class<?> type) {
+		public Parameter(String name, String description, Class<?> type) {
 			this.name = name;
+			this.description = description;
 			this.type = type;
 		}
 
@@ -71,6 +68,10 @@ public class ParameterSet {
 
 		public String getName() {
 			return name;
+		}
+
+		public String getDescription() {
+			return description;
 		}
 	}
 }

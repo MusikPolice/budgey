@@ -31,7 +31,8 @@ public class BudgeyCLI {
 			System.out.println("\nOptions:");
 			for (int i = 1; i <= commands.size(); i++) {
 				final int index = i - 1;
-				System.out.println(i + ") " + commands.get(index).getName());
+				System.out.println(i + ") " + commands.get(index).getName() + " - "
+						+ commands.get(index).getDescription());
 			}
 			final int selection = getInteger();
 			if (selection == 0 || selection > commands.size()) {
@@ -44,7 +45,7 @@ public class BudgeyCLI {
 			final ParameterSet parameterSet = command.getParameterSet();
 			final List<Parameter> parameters = parameterSet.getParameters();
 			for (final Parameter p : parameters) {
-				System.out.println(p.getName());
+				System.out.println(p.getName() + " - " + p.getDescription());
 				if (p.getType() == String.class) {
 					parameterSet.setParameterValue(p.getName(), getString());
 				} else if (p.getType() == Integer.class) {

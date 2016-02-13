@@ -27,10 +27,16 @@ public class ImportCommand implements Command {
 	}
 
 	@Override
+	public String getDescription() {
+		return "imports transactions from a file";
+	}
+
+	@Override
 	public ParameterSet getParameterSet() {
 		final List<Parameter> parameters = new ArrayList<>();
-		parameters.add(new Parameter(PARSER_KEY, String.class));
-		parameters.add(new Parameter(FILE_KEY, String.class));
+		parameters.add(new Parameter(PARSER_KEY, "the name of the parser to use [" + ROYAL_BANK_PARSER + ", "
+		        + SCOTIA_BANK_PARSER + "]", String.class));
+		parameters.add(new Parameter(FILE_KEY, "the path to the file to import", String.class));
 		return new ParameterSet(parameters);
 	}
 
