@@ -5,6 +5,9 @@ import java.util.ArrayList;
 import ca.jonathanfritz.budgey.ui.cli.Command;
 import ca.jonathanfritz.budgey.ui.cli.ParameterSet;
 
+/**
+ * Exits the CLI
+ */
 public class ExitCommand implements Command {
 
 	@Override

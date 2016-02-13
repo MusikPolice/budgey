@@ -43,6 +43,13 @@
 			<version>0.10.0</version>
 		</dependency>
 
+		<!-- Reflections library for auto-discovery and classpath scanning -->
+		<dependency>
+			<groupId>org.reflections</groupId>
+			<artifactId>reflections</artifactId>
+			<version>0.9.9-RC1</version>
+		</dependency>
+
 		<!-- Logging -->
 		<dependency>
 			<groupId>org.slf4j</groupId>

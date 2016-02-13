@@ -5,13 +5,13 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
+import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ca.jonathanfritz.budgey.ui.cli.ParameterSet.Parameter;
-import ca.jonathanfritz.budgey.ui.cli.commands.ExitCommand;
-import ca.jonathanfritz.budgey.ui.cli.commands.ImportCommand;
 
 public class BudgeyCLI {
 
@@ -20,12 +20,17 @@ public class BudgeyCLI {
 	private final static Logger log = LoggerFactory.getLogger(BudgeyCLI.class);
 
 	public BudgeyCLI() {
-		// TODO: auto-discover commands with classpath scanning
-		final ImportCommand importCommand = new ImportCommand();
-		commands.add(importCommand);
-
-		final ExitCommand exitCommand = new ExitCommand();
-		commands.add(exitCommand);
+		// auto-discover commands with classpath scanning
+		final Reflections reflections = new Reflections("ca.jonathanfritz.budgey.ui.cli.commands");
+		final Set<Class<? extends Command>> subTypes =
+		        reflections.getSubTypesOf(Command.class);
+		for (final Class<? extends Command> c : subTypes) {
+			try {
+				commands.add((Command) c.getConstructors()[0].newInstance());
+			} catch (final Exception e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	public void run() {

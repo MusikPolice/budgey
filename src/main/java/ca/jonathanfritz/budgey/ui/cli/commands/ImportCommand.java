@@ -13,6 +13,10 @@ import ca.jonathanfritz.budgey.ui.cli.Command;
 import ca.jonathanfritz.budgey.ui.cli.ParameterSet;
 import ca.jonathanfritz.budgey.ui.cli.ParameterSet.Parameter;
 
+/**
+ * Tries to import a file full of transactions.<br />
+ * TODO: use classpath scanning to find all the parsers, auto-discover the most appropriate one
+ */
 public class ImportCommand implements Command {
 
 	private static final String PARSER_KEY = "parser";
@@ -35,7 +39,7 @@ public class ImportCommand implements Command {
 	public ParameterSet getParameterSet() {
 		final List<Parameter> parameters = new ArrayList<>();
 		parameters.add(new Parameter(PARSER_KEY, "the name of the parser to use [" + ROYAL_BANK_PARSER + ", "
-		        + SCOTIA_BANK_PARSER + "]", String.class));
+				+ SCOTIA_BANK_PARSER + "]", String.class));
 		parameters.add(new Parameter(FILE_KEY, "the path to the file to import", String.class));
 		return new ParameterSet(parameters);
 	}
