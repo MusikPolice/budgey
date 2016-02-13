@@ -1,4 +1,4 @@
-package ca.jonathanfritz.budgey.ui;
+package ca.jonathanfritz.budgey.ui.cli;
 
 public interface Command {
 

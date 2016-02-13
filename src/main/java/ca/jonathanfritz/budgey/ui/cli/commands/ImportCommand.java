@@ -1,4 +1,4 @@
-package ca.jonathanfritz.budgey.commands;
+package ca.jonathanfritz.budgey.ui.cli.commands;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -9,9 +9,9 @@ import ca.jonathanfritz.budgey.importer.CSVImporter;
 import ca.jonathanfritz.budgey.importer.CSVParser;
 import ca.jonathanfritz.budgey.importer.RoyalBankCSVParser;
 import ca.jonathanfritz.budgey.importer.ScotiabankCSVParser;
-import ca.jonathanfritz.budgey.ui.Command;
-import ca.jonathanfritz.budgey.ui.ParameterSet;
-import ca.jonathanfritz.budgey.ui.ParameterSet.Parameter;
+import ca.jonathanfritz.budgey.ui.cli.Command;
+import ca.jonathanfritz.budgey.ui.cli.ParameterSet;
+import ca.jonathanfritz.budgey.ui.cli.ParameterSet.Parameter;
 
 public class ImportCommand implements Command {
 

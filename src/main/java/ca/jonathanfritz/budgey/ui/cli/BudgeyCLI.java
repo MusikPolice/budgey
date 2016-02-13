@@ -1,4 +1,4 @@
-package ca.jonathanfritz.budgey.ui;
+package ca.jonathanfritz.budgey.ui.cli;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -9,8 +9,9 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ca.jonathanfritz.budgey.commands.ImportCommand;
-import ca.jonathanfritz.budgey.ui.ParameterSet.Parameter;
+import ca.jonathanfritz.budgey.ui.cli.ParameterSet.Parameter;
+import ca.jonathanfritz.budgey.ui.cli.commands.ExitCommand;
+import ca.jonathanfritz.budgey.ui.cli.commands.ImportCommand;
 
 public class BudgeyCLI {
 
@@ -19,9 +20,12 @@ public class BudgeyCLI {
 	private final static Logger log = LoggerFactory.getLogger(BudgeyCLI.class);
 
 	public BudgeyCLI() {
+		// TODO: auto-discover commands with classpath scanning
 		final ImportCommand importCommand = new ImportCommand();
-
 		commands.add(importCommand);
+
+		final ExitCommand exitCommand = new ExitCommand();
+		commands.add(exitCommand);
 	}
 
 	public void run() {
@@ -32,7 +36,7 @@ public class BudgeyCLI {
 			for (int i = 1; i <= commands.size(); i++) {
 				final int index = i - 1;
 				System.out.println(i + ") " + commands.get(index).getName() + " - "
-						+ commands.get(index).getDescription());
+				        + commands.get(index).getDescription());
 			}
 			final int selection = getInteger();
 			if (selection == 0 || selection > commands.size()) {
