@@ -21,6 +21,11 @@ public class ExitCommand implements Command {
 	}
 
 	@Override
+	public int getOrder() {
+		return Integer.MAX_VALUE;
+	}
+
+	@Override
 	public ParameterSet getParameterSet() {
 		return new ParameterSet(new ArrayList<ParameterSet.Parameter>());
 	}
@@ -30,5 +35,4 @@ public class ExitCommand implements Command {
 		System.out.println("Goodbye!");
 		System.exit(0);
 	}
-
 }

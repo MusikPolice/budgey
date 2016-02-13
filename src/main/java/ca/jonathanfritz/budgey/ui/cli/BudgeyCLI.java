@@ -5,7 +5,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 import org.reflections.Reflections;
 import org.slf4j.Logger;
@@ -24,13 +26,18 @@ public class BudgeyCLI {
 		final Reflections reflections = new Reflections("ca.jonathanfritz.budgey.ui.cli.commands");
 		final Set<Class<? extends Command>> subTypes =
 		        reflections.getSubTypesOf(Command.class);
+
+		// sort the commands as desired
+		final Map<Integer, Command> unsortedCommands = new TreeMap<>();
 		for (final Class<? extends Command> c : subTypes) {
 			try {
-				commands.add((Command) c.getConstructors()[0].newInstance());
+				final Command command = (Command) c.getConstructors()[0].newInstance();
+				unsortedCommands.put(command.getOrder(), command);
 			} catch (final Exception e) {
 				e.printStackTrace();
 			}
 		}
+		commands.addAll(unsortedCommands.values());
 	}
 
 	public void run() {

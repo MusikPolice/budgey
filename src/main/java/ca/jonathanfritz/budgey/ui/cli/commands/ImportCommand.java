@@ -36,6 +36,11 @@ public class ImportCommand implements Command {
 	}
 
 	@Override
+	public int getOrder() {
+		return 0;
+	}
+
+	@Override
 	public ParameterSet getParameterSet() {
 		final List<Parameter> parameters = new ArrayList<>();
 		parameters.add(new Parameter(PARSER_KEY, "the name of the parser to use [" + ROYAL_BANK_PARSER + ", "

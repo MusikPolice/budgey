@@ -18,6 +18,11 @@ public interface Command {
 	String getDescription();
 
 	/**
+	 * @return the desired sort order for commands in the CLI menu
+	 */
+	int getOrder();
+
+	/**
 	 * @return the parameters that this command needs in order to do its work
 	 */
 	ParameterSet getParameterSet();
