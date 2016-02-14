@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 
 import org.slf4j.Logger;
@@ -14,7 +13,6 @@ import ca.jonathanfritz.budgey.Credentials;
 import ca.jonathanfritz.budgey.Profile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Joiner;
 import com.google.inject.Inject;
 
 public class PersistenceService implements ManagedService {
@@ -80,7 +78,7 @@ public class PersistenceService implements ManagedService {
 	 * @throws IOException if file creation or copy fails
 	 */
 	private File getProfileFile(boolean backup) throws IOException {
-		final Path path = Paths.get(Joiner.on(File.separator).join(System.getProperty("user.home"), ".budgey", "profile.db"));
+		final Path path = credentials.getPath();
 		if (!Files.exists(path)) {
 			log.debug("Attempting to create profile file " + path.toString());
 			try {
@@ -92,12 +90,12 @@ public class PersistenceService implements ManagedService {
 			log.debug("Success");
 		} else if (backup) {
 			log.debug("Creating a backup of existing profile file");
-			final Path backupFile = path.resolveSibling("profile.bak");
+			final Path backupPath = credentials.getBackupPath();
 			try {
-				Files.copy(path, backupFile, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
+				Files.copy(path, backupPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
 			} catch (final IOException e) {
 				throw new IOException("Failed to copy existing profile file " + path.toString() + " to "
-				        + backupFile.toString(), e);
+						+ backupPath.toString(), e);
 			}
 		}
 		return new File(path.toUri());
