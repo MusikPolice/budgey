@@ -1,0 +1,12 @@
+<configuration>
+	<logger name="org.reflections.Reflections" level="WARN" />
+
+	<root level="ALL">
+		<appender class="ch.qos.logback.core.ConsoleAppender">
+			<encoder>
+				<pattern>%d{ISO8601} %-5level [%thread] %logger{1} - %m%n
+				</pattern>
+			</encoder>
+		</appender>
+	</root>
+</configuration>

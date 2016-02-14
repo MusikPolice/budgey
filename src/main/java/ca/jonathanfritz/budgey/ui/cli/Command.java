@@ -32,5 +32,5 @@ public interface Command {
 	 * live here.
 	 * @param parameters the parameters returned by {@link #getParameterSet()}, now with values.
 	 */
-	void execute(ParameterSet parameters);
+	void execute(ParameterSet parameters) throws ExitApplicationException;
 }

@@ -9,11 +9,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ca.jonathanfritz.budgey.ApplicationContext;
 import ca.jonathanfritz.budgey.ui.cli.ParameterSet.Parameter;
+
+import com.google.inject.Inject;
 
 public class BudgeyCLI {
 
@@ -21,23 +23,15 @@ public class BudgeyCLI {
 
 	private final static Logger log = LoggerFactory.getLogger(BudgeyCLI.class);
 
-	public BudgeyCLI() {
-		// auto-discover commands with classpath scanning
-		final Reflections reflections = new Reflections("ca.jonathanfritz.budgey.ui.cli.commands");
-		final Set<Class<? extends Command>> subTypes =
-		        reflections.getSubTypesOf(Command.class);
-
-		// sort the commands as desired
+	@Inject
+	public BudgeyCLI(Set<Command> commands) {
+		// sort the commands so that they appear in the desired order
 		final Map<Integer, Command> unsortedCommands = new TreeMap<>();
-		for (final Class<? extends Command> c : subTypes) {
-			try {
-				final Command command = (Command) c.getConstructors()[0].newInstance();
-				unsortedCommands.put(command.getOrder(), command);
-			} catch (final Exception e) {
-				e.printStackTrace();
-			}
+		for (final Command command : commands) {
+			unsortedCommands.put(command.getOrder(), command);
 		}
-		commands.addAll(unsortedCommands.values());
+		this.commands.addAll(unsortedCommands.values());
+		log.debug("Initialization complete");
 	}
 
 	public void run() {
@@ -69,8 +63,13 @@ public class BudgeyCLI {
 				}
 			}
 
-			// run the command
-			command.execute(parameterSet);
+			try {
+				// run the command
+				command.execute(parameterSet);
+			} catch (final ExitApplicationException e) {
+				System.out.println(e.getMessage());
+				break;
+			}
 		}
 	}
 
@@ -95,8 +94,14 @@ public class BudgeyCLI {
 		}
 	}
 
-	public static void main(String[] args) {
-		final BudgeyCLI budgey = new BudgeyCLI();
-		budgey.run();
+	public static void main(String[] args) throws IOException {
+		log.debug("Initializing Budgey CLI");
+		try (final ApplicationContext budgey = new ApplicationContext()) {
+			// the run method of the CLI will block until the user invokes the exit command
+			// at that time, the Budgey application context will be stopped
+			final BudgeyCLI cli = budgey.getInjector().getInstance(BudgeyCLI.class);
+			cli.run();
+		}
+		log.debug("Budgey CLI stopped");
 	}
 }
