@@ -43,7 +43,7 @@ public class BudgeyCLI {
 			for (int i = 1; i <= commands.size(); i++) {
 				final int index = i - 1;
 				System.out.println(i + ") " + commands.get(index).getName() + " - "
-						+ commands.get(index).getDescription());
+				        + commands.get(index).getDescription());
 			}
 			final int selection = getInteger();
 			if (selection == 0 || selection > commands.size()) {
@@ -97,8 +97,8 @@ public class BudgeyCLI {
 
 	public static void main(String[] args) throws IOException {
 		log.debug("Initializing Budgey CLI");
-		// TODO: get a username and password from the user
-		try (final ApplicationContext budgey = new ApplicationContext("", "", new BudgeyCLIModule())) {
+		// TODO: get an (optional) username and a (not optional) password from the user
+		try (final ApplicationContext budgey = new ApplicationContext("", new BudgeyCLIModule())) {
 			// the run method of the CLI will block until the user invokes the exit command
 			// at that time, the Budgey application context will be stopped
 			final BudgeyCLI cli = budgey.getInjector().getInstance(BudgeyCLI.class);

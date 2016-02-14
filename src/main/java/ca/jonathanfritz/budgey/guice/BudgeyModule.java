@@ -7,9 +7,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ca.jonathanfritz.budgey.services.ManagedService;
+import ca.jonathanfritz.budgey.util.jackson.ObjectMapperFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.google.inject.AbstractModule;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
@@ -36,8 +36,6 @@ public class BudgeyModule extends AbstractModule {
 		}
 
 		// globally configured ObjectMapper
-		final ObjectMapper objectMapper = new ObjectMapper();
-		objectMapper.registerModule(new JodaModule());
-		bind(ObjectMapper.class).toInstance(objectMapper);
+		bind(ObjectMapper.class).toInstance(ObjectMapperFactory.getObjectMapper());
 	}
 }

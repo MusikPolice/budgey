@@ -35,6 +35,24 @@ public class ApplicationContext implements Closeable {
 
 	private final static Logger log = LoggerFactory.getLogger(ApplicationContext.class);
 
+	/**
+	 * Creates an application context for the default username
+	 * @param password the password to unlock the user's {@link Profile}
+	 * @param additionalModules any additional Guice {@link Module}s that need to be loaded into the injector
+	 * @throws Exception thrown if context does not start successfully
+	 */
+	public ApplicationContext(String password, Module... additionalModules) throws Exception {
+		this(null, password, additionalModules);
+	}
+
+	/**
+	 * Creates an application context for the specified user
+	 * @param username the user to create the context for. This property will be used to load the appropriate
+	 *            {@link Profile}, as opposed to the default one.
+	 * @param password the password to unlock the user's {@link Profile}
+	 * @param additionalModules any additional Guice {@link Module}s that need to be loaded into the injector
+	 * @throws Exception thrown if context does not start successfully
+	 */
 	public ApplicationContext(String username, String password, Module... additionalModules) throws Exception {
 		// we always bind BudgeyModule in addition to the modules requested by the caller
 		log.debug("Registering Guice modules...");

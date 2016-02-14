@@ -1,7 +1,10 @@
 package ca.jonathanfritz.budgey.importer;
 
-import ca.jonathanfritz.budgey.Transaction;
-import com.google.common.base.Joiner;
+import java.math.BigDecimal;
+import java.text.NumberFormat;
+import java.text.ParseException;
+import java.util.Locale;
+
 import org.apache.commons.lang3.StringUtils;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
@@ -9,21 +12,20 @@ import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.DateTimeFormatterBuilder;
 
-import java.math.BigDecimal;
-import java.text.NumberFormat;
-import java.text.ParseException;
-import java.util.Locale;
+import ca.jonathanfritz.budgey.Transaction;
+
+import com.google.common.base.Joiner;
 
 public class RoyalBankCSVParser extends AbstractCSVParser implements CSVParser {
 
 	// date format is 10/13/2015
 	private final DateTimeFormatter formatter = new DateTimeFormatterBuilder()
-	        .appendMonthOfYear(2)
-	        .appendLiteral('/')
-	        .appendDayOfMonth(2)
-	        .appendLiteral('/')
-	        .appendYear(4, 4)
-	        .toFormatter();
+	.appendMonthOfYear(2)
+	.appendLiteral('/')
+	.appendDayOfMonth(2)
+	.appendLiteral('/')
+	.appendYear(4, 4)
+	.toFormatter();
 
 	private final NumberFormat cadFormat = NumberFormat.getNumberInstance(Locale.CANADA);
 	private final NumberFormat usdFormat = NumberFormat.getNumberInstance(Locale.US);
@@ -56,12 +58,12 @@ public class RoyalBankCSVParser extends AbstractCSVParser implements CSVParser {
 		final DateTime date = formatter.parseDateTime(fields[2]);
 
 		return Transaction
-		        .newBuilder()
-		        .setAccountNumber(fields[1])
-		        .setTransactionDate(date)
-		        .setOrder(this.getOrderForDate(date))
-		        .setDescription(description)
-		        .setAmount(amount)
-		        .build();
+				.newBuilder()
+				.setAccountNumber(fields[1])
+				.setDateUtc(date)
+				.setOrder(getOrderForDate(date))
+				.setDescription(description)
+				.setAmount(amount)
+				.build();
 	}
 }

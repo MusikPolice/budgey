@@ -4,20 +4,32 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * Represents a transaction at a financial institution. Two transactions are equal if and only if they share the same
  * transaction date, description and amount.
  */
 public class Transaction {
 	private final String accountNumber;
-	private final DateTime transactionDate;
+	private final DateTime dateUtc;
 	private final int order;
 	private final String description;
 	private final Money amount;
 
+	@JsonCreator
+	public Transaction(@JsonProperty("accountNumber") String accountNumber, @JsonProperty("dateUtc") DateTime dateUtc, @JsonProperty("order") int order, @JsonProperty("description") String description, @JsonProperty("amount") Money amount) {
+		this.accountNumber = accountNumber;
+		this.dateUtc = dateUtc;
+		this.order = order;
+		this.description = description;
+		this.amount = amount;
+	}
+
 	private Transaction(Builder builder) {
 		accountNumber = builder.accountNumber;
-		transactionDate = builder.transactionDate;
+		dateUtc = builder.dateUtc;
 		order = builder.order;
 		description = builder.description;
 		amount = builder.amount;
@@ -34,8 +46,8 @@ public class Transaction {
 	 * @return the date on which this transaction took place. If a time for the transaction is available, it should also
 	 *         be expressed in this field.
 	 */
-	public DateTime getTransactionDate() {
-		return transactionDate;
+	public DateTime getDateUtc() {
+		return dateUtc;
 	}
 
 	/**
@@ -75,7 +87,7 @@ public class Transaction {
 		int result = 1;
 		result = prime * result + ((amount == null) ? 0 : amount.hashCode());
 		result = prime * result + ((description == null) ? 0 : description.hashCode());
-		result = prime * result + ((transactionDate == null) ? 0 : transactionDate.hashCode());
+		result = prime * result + ((dateUtc == null) ? 0 : dateUtc.hashCode());
 		return result;
 	}
 
@@ -105,11 +117,11 @@ public class Transaction {
 		} else if (!description.equals(other.description)) {
 			return false;
 		}
-		if (transactionDate == null) {
-			if (other.transactionDate != null) {
+		if (dateUtc == null) {
+			if (other.dateUtc != null) {
 				return false;
 			}
-		} else if (!transactionDate.equals(other.transactionDate)) {
+		} else if (!dateUtc.equals(other.dateUtc)) {
 			return false;
 		}
 		return true;
@@ -117,7 +129,7 @@ public class Transaction {
 
 	public static class Builder {
 		private String accountNumber;
-		private DateTime transactionDate;
+		private DateTime dateUtc;
 		private int order;
 		private String description;
 		private Money amount;
@@ -134,8 +146,8 @@ public class Transaction {
 		 * @param transactionDate the date on which this transaction took place. If a time for the transaction is
 		 *            available, it should also be expressed in this field.
 		 */
-		public Builder setTransactionDate(DateTime transactionDate) {
-			this.transactionDate = transactionDate;
+		public Builder setDateUtc(DateTime dateUtc) {
+			this.dateUtc = dateUtc;
 			return this;
 		}
 

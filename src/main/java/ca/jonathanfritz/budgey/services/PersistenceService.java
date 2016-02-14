@@ -24,7 +24,7 @@ public class PersistenceService implements ManagedService {
 	private final static Logger log = LoggerFactory.getLogger(PersistenceService.class);
 
 	@Inject
-	public PersistenceService(Credentials credentials, ObjectMapper objectMapper) throws IOException {
+	public PersistenceService(Credentials credentials, ObjectMapper objectMapper) {
 		this.credentials = credentials;
 		this.objectMapper = objectMapper;
 	}
@@ -95,7 +95,7 @@ public class PersistenceService implements ManagedService {
 				Files.copy(path, backupPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
 			} catch (final IOException e) {
 				throw new IOException("Failed to copy existing profile file " + path.toString() + " to "
-						+ backupPath.toString(), e);
+				        + backupPath.toString(), e);
 			}
 		}
 		return new File(path.toUri());

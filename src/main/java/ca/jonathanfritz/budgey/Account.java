@@ -1,9 +1,11 @@
 package ca.jonathanfritz.budgey;
 
-import java.util.HashSet;
 import java.util.Set;
 
 import org.joda.money.Money;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Represents an account at a financial institution. Two accounts are equal if and only if they have the same account
@@ -14,12 +16,14 @@ public class Account {
 	private final String accountNumber;
 	private final AccountType type;
 	private final Money balance;
-	private final Set<Transaction> transactions = new HashSet<>();
+	private final Set<Transaction> transactions;
 
-	public Account(String accountNumber, AccountType type, Money balance) {
+	@JsonCreator
+	public Account(@JsonProperty("accountNumber") String accountNumber, @JsonProperty("type") AccountType type, @JsonProperty("balance") Money balance, @JsonProperty("transactions") Set<Transaction> transactions) {
 		this.accountNumber = accountNumber;
 		this.type = type;
 		this.balance = balance;
+		this.transactions = transactions;
 	}
 
 	public String getAccountNumber() {
@@ -32,6 +36,10 @@ public class Account {
 
 	public Money getBalance() {
 		return balance;
+	}
+
+	public Set<Transaction> getTransactions() {
+		return transactions;
 	}
 
 	@Override
