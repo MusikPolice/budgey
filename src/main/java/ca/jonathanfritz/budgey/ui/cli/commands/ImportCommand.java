@@ -59,6 +59,8 @@ public class ImportCommand implements Command {
 
 		CSVParser parser;
 
+		// TODO: register and inject a set of parsers, then choose the correct one by name
+		// see examples of finding ManagedServces and Commands in BudgeyModule and BudgeyCLIModule
 		switch (parserOption) {
 			default:
 			case ROYAL_BANK_PARSER:

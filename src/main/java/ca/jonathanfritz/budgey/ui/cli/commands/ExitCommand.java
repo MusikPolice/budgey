@@ -3,6 +3,7 @@ package ca.jonathanfritz.budgey.ui.cli.commands;
 import java.util.ArrayList;
 
 import ca.jonathanfritz.budgey.ui.cli.Command;
+import ca.jonathanfritz.budgey.ui.cli.ExitApplicationException;
 import ca.jonathanfritz.budgey.ui.cli.ParameterSet;
 
 /**
@@ -31,8 +32,7 @@ public class ExitCommand implements Command {
 	}
 
 	@Override
-	public void execute(ParameterSet parameters) {
-		System.out.println("Goodbye!");
-		System.exit(0);
+	public void execute(ParameterSet parameters) throws ExitApplicationException {
+		throw new ExitApplicationException("Goodbye!");
 	}
 }
