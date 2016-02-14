@@ -1,14 +1,12 @@
-package ca.jonathanfritz.budgey;
+package ca.jonathanfritz.budgey.services;
 
-import com.google.inject.Singleton;
 
 /**
  * Objects that implement this interface will be stopped when the application stops
  */
-@Singleton
 public interface ManagedService {
 
-	void start();
+	void start() throws Exception;
 
 	void stop();
 }

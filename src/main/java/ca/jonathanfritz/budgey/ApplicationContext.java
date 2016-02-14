@@ -2,14 +2,19 @@ package ca.jonathanfritz.budgey;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
-import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.inject.AbstractModule;
+import ca.jonathanfritz.budgey.guice.BudgeyModule;
+import ca.jonathanfritz.budgey.guice.CredentialsModule;
+import ca.jonathanfritz.budgey.services.ManagedService;
+
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
@@ -30,22 +35,14 @@ public class ApplicationContext implements Closeable {
 
 	private final static Logger log = LoggerFactory.getLogger(ApplicationContext.class);
 
-	public ApplicationContext() {
-		// auto-discover and register modules with classpath scanning
-		// TODO: we have a module specifically for CLI stuff. Maybe it shouldn't be registered if the GUI is running
+	public ApplicationContext(String username, String password, Module... additionalModules) throws Exception {
+		// we always bind BudgeyModule in addition to the modules requested by the caller
 		log.debug("Registering Guice modules...");
-		final Reflections reflections = new Reflections("ca.jonathanfritz.budgey");
-		final Set<Class<? extends AbstractModule>> moduleTypes = reflections.getSubTypesOf(AbstractModule.class);
-		final Set<Module> modules = new HashSet<>();
-		for (final Class<? extends AbstractModule> clazz : moduleTypes) {
-			try {
-				// betting on modules having a noarg constructor...
-				log.debug(clazz.getCanonicalName());
-				modules.add(clazz.getConstructor().newInstance());
-			} catch (final Exception e) {
-				log.error("Failed to initialize Module " + clazz.getCanonicalName()
-				        + ". Does it have a zero argument constructor?", e);
-			}
+		final List<Module> modules = new ArrayList<>();
+		modules.addAll(Arrays.asList(new BudgeyModule(), new CredentialsModule(username, password)));
+		modules.addAll(Arrays.asList(additionalModules));
+		for (final Module m : modules) {
+			log.debug(m.getClass().getCanonicalName());
 		}
 		injector = Guice.createInjector(modules);
 
@@ -57,12 +54,12 @@ public class ApplicationContext implements Closeable {
 		return injector;
 	}
 
-	private void start() {
+	private void start() throws Exception {
 		log.debug("Starting managed services...");
 		managedServices.addAll(injector.getInstance(Key.get(new TypeLiteral<Set<ManagedService>>() {
 		})));
 		for (final ManagedService s : managedServices) {
-			log.debug("\t" + s.getClass().getCanonicalName());
+			log.debug(s.getClass().getCanonicalName());
 			s.start();
 		}
 	}

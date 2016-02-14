@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ca.jonathanfritz.budgey.ApplicationContext;
+import ca.jonathanfritz.budgey.guice.BudgeyCLIModule;
 import ca.jonathanfritz.budgey.ui.cli.ParameterSet.Parameter;
 
 import com.google.inject.Inject;
@@ -42,7 +43,7 @@ public class BudgeyCLI {
 			for (int i = 1; i <= commands.size(); i++) {
 				final int index = i - 1;
 				System.out.println(i + ") " + commands.get(index).getName() + " - "
-				        + commands.get(index).getDescription());
+						+ commands.get(index).getDescription());
 			}
 			final int selection = getInteger();
 			if (selection == 0 || selection > commands.size()) {
@@ -96,11 +97,14 @@ public class BudgeyCLI {
 
 	public static void main(String[] args) throws IOException {
 		log.debug("Initializing Budgey CLI");
-		try (final ApplicationContext budgey = new ApplicationContext()) {
+		// TODO: get a username and password from the user
+		try (final ApplicationContext budgey = new ApplicationContext("", "", new BudgeyCLIModule())) {
 			// the run method of the CLI will block until the user invokes the exit command
 			// at that time, the Budgey application context will be stopped
 			final BudgeyCLI cli = budgey.getInjector().getInstance(BudgeyCLI.class);
 			cli.run();
+		} catch (final Exception e) {
+			log.error("Failed to start Application Context", e);
 		}
 		log.debug("Budgey CLI stopped");
 	}

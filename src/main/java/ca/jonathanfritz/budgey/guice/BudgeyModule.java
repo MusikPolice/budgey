@@ -6,8 +6,10 @@ import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ca.jonathanfritz.budgey.ManagedService;
+import ca.jonathanfritz.budgey.services.ManagedService;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.google.inject.AbstractModule;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
@@ -32,5 +34,10 @@ public class BudgeyModule extends AbstractModule {
 			log.debug(clazz.getCanonicalName());
 			managedServiceBinder.addBinding().to(clazz).in(Singleton.class);
 		}
+
+		// globally configured ObjectMapper
+		final ObjectMapper objectMapper = new ObjectMapper();
+		objectMapper.registerModule(new JodaModule());
+		bind(ObjectMapper.class).toInstance(objectMapper);
 	}
 }
