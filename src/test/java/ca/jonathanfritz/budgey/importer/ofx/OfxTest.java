@@ -1,7 +1,7 @@
 package ca.jonathanfritz.budgey.importer.ofx;
 
 import ca.jonathanfritz.budgey.Transaction;
-import ca.jonathanfritz.budgey.importer.AbstractCSVParser;
+import ca.jonathanfritz.budgey.importer.AbstractParser;
 import com.google.common.collect.Lists;
 import net.sf.ofx4j.domain.data.ResponseEnvelope;
 import net.sf.ofx4j.domain.data.ResponseMessage;
@@ -19,10 +19,11 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.SortedSet;
 
-public class OfxTest extends AbstractCSVParser {
+public class OfxTest extends AbstractParser {
 
 	@Test
 	public void testScotia() throws IOException, OFXParseException {
@@ -218,4 +219,8 @@ public class OfxTest extends AbstractCSVParser {
 
 	}
 
+	@Override
+	public List<Transaction> parse(final Path path) throws IOException {
+		return null;
+	}
 }

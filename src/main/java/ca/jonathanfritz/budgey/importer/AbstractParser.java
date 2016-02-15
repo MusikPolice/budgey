@@ -2,7 +2,7 @@ package ca.jonathanfritz.budgey.importer;
 
 import org.joda.time.DateTime;
 
-public abstract class AbstractCSVParser {
+public abstract class AbstractParser implements Parser {
 
 	private DateTime lastDate = null;
 
@@ -10,14 +10,8 @@ public abstract class AbstractCSVParser {
 
 	protected int getOrderForDate(final DateTime date) {
 
-		if(!date.isEqual(this.lastDate)) {
-			this.lastOrder = 0;
-		} else {
-			this.lastOrder = this.lastOrder + 1;
-		}
-
+		this.lastOrder = date.isEqual(this.lastDate) ? this.lastOrder + 1 : 0;
 		this.lastDate = date;
-
 		return this.lastOrder;
 
 	}

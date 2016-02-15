@@ -1,6 +1,8 @@
-package ca.jonathanfritz.budgey.importer;
+package ca.jonathanfritz.budgey.importer.csv;
 
 import ca.jonathanfritz.budgey.Transaction;
+import ca.jonathanfritz.budgey.importer.csv.AbstractCSVParser;
+import ca.jonathanfritz.budgey.importer.csv.CSVParser;
 import com.google.common.base.Joiner;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.money.CurrencyUnit;

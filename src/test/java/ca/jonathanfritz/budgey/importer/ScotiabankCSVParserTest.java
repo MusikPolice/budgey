@@ -1,6 +1,8 @@
 package ca.jonathanfritz.budgey.importer;
 
 import ca.jonathanfritz.budgey.Transaction;
+import ca.jonathanfritz.budgey.importer.csv.FieldSanitizer;
+import ca.jonathanfritz.budgey.importer.csv.ScotiabankCSVParser;
 import ca.jonathanfritz.budgey.util.ClasspathLoader;
 import org.hamcrest.core.IsEqual;
 import org.joda.time.DateTime;
