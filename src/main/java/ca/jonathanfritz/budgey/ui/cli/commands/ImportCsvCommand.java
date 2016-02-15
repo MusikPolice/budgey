@@ -1,23 +1,23 @@
 package ca.jonathanfritz.budgey.ui.cli.commands;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
 import ca.jonathanfritz.budgey.Transaction;
-import ca.jonathanfritz.budgey.importer.CSVImporter;
-import ca.jonathanfritz.budgey.importer.CSVParser;
-import ca.jonathanfritz.budgey.importer.RoyalBankCSVParser;
-import ca.jonathanfritz.budgey.importer.ScotiabankCSVParser;
+import ca.jonathanfritz.budgey.importer.Parser;
+import ca.jonathanfritz.budgey.importer.csv.RoyalBankCSVParser;
+import ca.jonathanfritz.budgey.importer.csv.ScotiabankCSVParser;
 import ca.jonathanfritz.budgey.ui.cli.Command;
 import ca.jonathanfritz.budgey.ui.cli.ParameterSet;
 import ca.jonathanfritz.budgey.ui.cli.ParameterSet.Parameter;
+
+import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Tries to import a file full of transactions.<br />
  * TODO: use classpath scanning to find all the parsers, auto-discover the most appropriate one
  */
-public class ImportCommand implements Command {
+public class ImportCsvCommand implements Command {
 
 	private static final String PARSER_KEY = "parser";
 	private static final String FILE_KEY = "file";
@@ -28,12 +28,12 @@ public class ImportCommand implements Command {
 
 	@Override
 	public String getName() {
-		return "import";
+		return "import-csv";
 	}
 
 	@Override
 	public String getDescription() {
-		return "imports transactions from a file";
+		return "imports transactions from a csv file";
 	}
 
 	@Override
@@ -53,11 +53,14 @@ public class ImportCommand implements Command {
 
 	@Override
 	public void execute(ParameterSet parameters) {
+
 		final String parserOption = parameters.getParameterValue(PARSER_KEY, String.class);
 		final String file = parameters.getParameterValue(FILE_KEY, String.class);
 		final String account = parameters.getParameterValue(ACCOUNT_KEY, String.class);
 
-		CSVParser parser;
+		final String absolutePath = file.replaceFirst("^~", System.getProperty("user.home"));
+
+		Parser parser;
 
 		// TODO: register and inject a set of parsers, then choose the correct one by name
 		// see examples of finding ManagedServces and Commands in BudgeyModule and BudgeyCLIModule
@@ -71,10 +74,9 @@ public class ImportCommand implements Command {
 				break;
 		}
 
-		final CSVImporter<CSVParser> csvImporter = new CSVImporter<>(parser);
 		List<Transaction> transactions;
 		try {
-			transactions = csvImporter.importFile(file);
+			transactions = parser.parse(Paths.get(absolutePath));
 		} catch (final IOException e) {
 			throw new RuntimeException("Failed to import file", e);
 		}

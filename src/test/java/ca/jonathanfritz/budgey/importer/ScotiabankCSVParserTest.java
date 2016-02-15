@@ -6,6 +6,8 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import ca.jonathanfritz.budgey.Transaction;
+import ca.jonathanfritz.budgey.importer.csv.FieldSanitizer;
+import ca.jonathanfritz.budgey.importer.csv.ScotiabankCSVParser;
 import ca.jonathanfritz.budgey.util.ClasspathLoader;
 
 public class ScotiabankCSVParserTest {
@@ -25,10 +27,10 @@ public class ScotiabankCSVParserTest {
 		Assert.assertThat(transaction.getDescription(), IsEqual.equalTo("MOVATI ATHLETIC WATERLOO WATERLOO     ON"));
 		Assert.assertThat(transaction.getAmount().getAmount().doubleValue(), IsEqual.equalTo(-508.50D));
 		Assert.assertThat(transaction.getDateUtc(), IsEqual.equalTo((new DateTime())
-		        .withTimeAtStartOfDay()
-		        .withYear(2015)
-		        .withMonthOfYear(9)
-		        .withDayOfMonth(1)));
+				.withTimeAtStartOfDay()
+				.withYear(2015)
+				.withMonthOfYear(9)
+				.withDayOfMonth(1)));
 		Assert.assertThat(transaction.getAccountNumber(), IsEqual.equalTo(ACCOUNT_NUMBER));
 
 	}

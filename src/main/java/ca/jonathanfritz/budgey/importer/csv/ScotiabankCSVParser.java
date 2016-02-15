@@ -1,4 +1,4 @@
-package ca.jonathanfritz.budgey.importer;
+package ca.jonathanfritz.budgey.importer.csv;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
