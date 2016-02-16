@@ -1,10 +1,15 @@
 package ca.jonathanfritz.budgey.services;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +25,8 @@ public class PersistenceService implements ManagedService {
 	private final Credentials credentials;
 	private final ObjectMapper objectMapper;
 	private Profile profile;
+
+	public final static String JSON_FILE_NAME = "profile.json";
 
 	private final static Logger log = LoggerFactory.getLogger(PersistenceService.class);
 
@@ -39,7 +46,11 @@ public class PersistenceService implements ManagedService {
 			return;
 		}
 
-		profile = objectMapper.readValue(profileFile, Profile.class);
+		try (final ZipFile zip = new ZipFile(profileFile)) {
+			final ZipEntry entry = zip.getEntry(JSON_FILE_NAME);
+			final InputStream stream = zip.getInputStream(entry);
+			profile = objectMapper.readValue(stream, Profile.class);
+		}
 	}
 
 	/**
@@ -57,7 +68,17 @@ public class PersistenceService implements ManagedService {
 			// profile.db and comparing them to the profile we're trying to save.
 			log.debug("Saving profile");
 			final File profileFile = getProfileFile(true);
-			objectMapper.writeValue(profileFile, profile);
+
+			try (final ZipOutputStream zip = new ZipOutputStream(new FileOutputStream(profileFile))) {
+				final ZipEntry entry = new ZipEntry(JSON_FILE_NAME);
+				zip.putNextEntry(entry);
+
+				final byte[] bytes = objectMapper.writeValueAsBytes(profile);
+
+				zip.write(bytes);
+				zip.closeEntry();
+			}
+
 			log.debug("Success");
 		} catch (final IOException e) {
 			log.error("Failed to save profile file", e);
@@ -95,7 +116,7 @@ public class PersistenceService implements ManagedService {
 				Files.copy(path, backupPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
 			} catch (final IOException e) {
 				throw new IOException("Failed to copy existing profile file " + path.toString() + " to "
-				        + backupPath.toString(), e);
+						+ backupPath.toString(), e);
 			}
 		}
 		return new File(path.toUri());

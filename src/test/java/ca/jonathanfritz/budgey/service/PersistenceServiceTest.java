@@ -41,8 +41,9 @@ public class PersistenceServiceTest {
 			Assert.assertTrue(profile.getLastUpdatedUtc().isBeforeNow());
 			Assert.assertTrue(profile.getAccounts().isEmpty());
 
-			// a profile file ought to have been created
+			// a profile file ought to have been created - it isn't a zip file because it's empty
 			Assert.assertTrue(Files.exists(credentials.getPath()));
+			Assert.assertThat(Files.probeContentType(credentials.getPath()), IsEqual.equalTo("text/plain"));
 
 		} finally {
 			// cleanup
@@ -66,10 +67,11 @@ public class PersistenceServiceTest {
 			final Account account = new Account("1234", AccountType.CHECKING, Money.of(CurrencyUnit.CAD, 10534.23), new HashSet<Transaction>());
 			persistenceService.getProfile().getAccounts().add(account);
 
-			// save the account to disk
+			// save the account to disk - it should be a zip file at this point
 			persistenceService.save();
 			Assert.assertTrue(Files.exists(credentials.getPath()));
 			Assert.assertTrue(Files.exists(credentials.getBackupPath()));
+			Assert.assertThat(Files.probeContentType(credentials.getPath()), IsEqual.equalTo("application/zip"));
 
 			// re-load the profile and verify
 			persistenceService = new PersistenceService(credentials, objectMapper);
