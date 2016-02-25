@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.UUID;
 
 import org.hamcrest.core.IsEqual;
+import org.hamcrest.core.IsNot;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.junit.Assert;
@@ -16,7 +17,6 @@ import ca.jonathanfritz.budgey.AccountType;
 import ca.jonathanfritz.budgey.Credentials;
 import ca.jonathanfritz.budgey.Profile;
 import ca.jonathanfritz.budgey.Transaction;
-import ca.jonathanfritz.budgey.services.PersistenceService;
 import ca.jonathanfritz.budgey.util.jackson.ObjectMapperFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -41,9 +41,9 @@ public class PersistenceServiceTest {
 			Assert.assertTrue(profile.getLastUpdatedUtc().isBeforeNow());
 			Assert.assertTrue(profile.getAccounts().isEmpty());
 
-			// a profile file ought to have been created - it isn't a zip file because it's empty
+			// a profile file ought to have been created, but it will be empty
 			Assert.assertTrue(Files.exists(credentials.getPath()));
-			Assert.assertThat(Files.probeContentType(credentials.getPath()), IsEqual.equalTo("text/plain"));
+			Assert.assertThat(Files.size(credentials.getPath()), IsEqual.equalTo(0L));
 
 		} finally {
 			// cleanup
@@ -67,11 +67,11 @@ public class PersistenceServiceTest {
 			final Account account = new Account("1234", AccountType.CHECKING, Money.of(CurrencyUnit.CAD, 10534.23), new HashSet<Transaction>());
 			persistenceService.getProfile().getAccounts().add(account);
 
-			// save the account to disk - it should be a zip file at this point
+			// save the account to disk - it should be an encrypted blob of a file at this point
 			persistenceService.save();
 			Assert.assertTrue(Files.exists(credentials.getPath()));
 			Assert.assertTrue(Files.exists(credentials.getBackupPath()));
-			Assert.assertThat(Files.probeContentType(credentials.getPath()), IsEqual.equalTo("application/zip"));
+			Assert.assertThat(Files.size(credentials.getPath()), IsNot.not(IsEqual.equalTo(0L)));
 
 			// re-load the profile and verify
 			persistenceService = new PersistenceService(credentials, objectMapper);
@@ -89,5 +89,42 @@ public class PersistenceServiceTest {
 			Files.deleteIfExists(credentials.getPath());
 			Files.deleteIfExists(credentials.getBackupPath());
 		}
+	}
+
+	@Test
+	public void zipTest() throws IOException {
+		final PersistenceService persistenceService = new PersistenceService(null, objectMapper);
+
+		final byte[] data = UUID.randomUUID().toString().getBytes();
+		final byte[] zipped = persistenceService.zip(data);
+		final byte[] unzipped = persistenceService.unzip(zipped);
+
+		Assert.assertArrayEquals(data, unzipped);
+	}
+
+	@Test
+	public void encryptionTest() {
+		final PersistenceService persistenceService = new PersistenceService(null, objectMapper);
+
+		final String password = UUID.randomUUID().toString();
+		final byte[] data = UUID.randomUUID().toString().getBytes();
+		final byte[] encrypted = persistenceService.encrypt(data, password);
+		final byte[] decrypted = persistenceService.decrypt(encrypted, password);
+
+		Assert.assertArrayEquals(data, decrypted);
+	}
+
+	@Test
+	public void zipEncryptTest() throws IOException {
+		final PersistenceService persistenceService = new PersistenceService(null, objectMapper);
+
+		final String password = UUID.randomUUID().toString();
+		final byte[] data = UUID.randomUUID().toString().getBytes();
+		final byte[] zipped = persistenceService.zip(data);
+		final byte[] encrypted = persistenceService.encrypt(zipped, password);
+		final byte[] decrypted = persistenceService.decrypt(encrypted, password);
+		final byte[] unzipped = persistenceService.unzip(decrypted);
+
+		Assert.assertArrayEquals(data, unzipped);
 	}
 }

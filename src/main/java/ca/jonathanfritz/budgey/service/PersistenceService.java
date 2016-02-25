@@ -1,16 +1,20 @@
-package ca.jonathanfritz.budgey.services;
+package ca.jonathanfritz.budgey.service;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+import org.apache.commons.io.IOUtils;
+import org.jasypt.encryption.pbe.StandardPBEByteEncryptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +42,6 @@ public class PersistenceService implements ManagedService {
 
 	@Override
 	public void start() throws IOException {
-		// TODO: compression+encryption
 		final File profileFile = getProfileFile(false);
 		if (Files.size(profileFile.toPath()) == 0) {
 			// this is a new profile file, so there's nothing to deserialize
@@ -46,10 +49,11 @@ public class PersistenceService implements ManagedService {
 			return;
 		}
 
-		try (final ZipFile zip = new ZipFile(profileFile)) {
-			final ZipEntry entry = zip.getEntry(JSON_FILE_NAME);
-			final InputStream stream = zip.getInputStream(entry);
-			profile = objectMapper.readValue(stream, Profile.class);
+		try (final FileInputStream in = new FileInputStream(profileFile)) {
+			final byte[] encrypted = IOUtils.toByteArray(in);
+			final byte[] zipped = decrypt(encrypted, credentials.getPassword());
+			final byte[] data = unzip(zipped);
+			profile = objectMapper.readValue(data, Profile.class);
 		}
 	}
 
@@ -69,14 +73,11 @@ public class PersistenceService implements ManagedService {
 			log.debug("Saving profile");
 			final File profileFile = getProfileFile(true);
 
-			try (final ZipOutputStream zip = new ZipOutputStream(new FileOutputStream(profileFile))) {
-				final ZipEntry entry = new ZipEntry(JSON_FILE_NAME);
-				zip.putNextEntry(entry);
-
-				final byte[] bytes = objectMapper.writeValueAsBytes(profile);
-
-				zip.write(bytes);
-				zip.closeEntry();
+			try (FileOutputStream out = new FileOutputStream(profileFile)) {
+				final byte[] data = objectMapper.writeValueAsBytes(profile);
+				final byte[] zipped = zip(data);
+				final byte[] encrypted = encrypt(zipped, credentials.getPassword());
+				out.write(encrypted);
 			}
 
 			log.debug("Success");
@@ -85,6 +86,46 @@ public class PersistenceService implements ManagedService {
 			return false;
 		}
 		return true;
+	}
+
+	protected byte[] zip(byte[] uncompressed) throws IOException {
+		final ByteArrayOutputStream out = new ByteArrayOutputStream();
+		try (final ZipOutputStream zip = new ZipOutputStream(out)) {
+			final ZipEntry entry = new ZipEntry(JSON_FILE_NAME);
+			zip.putNextEntry(entry);
+			zip.write(uncompressed);
+			zip.closeEntry();
+		}
+		return out.toByteArray();
+	}
+
+	protected byte[] unzip(byte[] compressed) throws IOException {
+		final ByteArrayInputStream in = new ByteArrayInputStream(compressed);
+		final ByteArrayOutputStream out = new ByteArrayOutputStream();
+		try (final ZipInputStream zip = new ZipInputStream(in)) {
+			zip.getNextEntry();
+
+			int count = 0;
+			final byte[] buff = new byte[1024];
+			while ((count = zip.read(buff, 0, buff.length)) != -1) {
+				out.write(buff, 0, count);
+			}
+		}
+		return out.toByteArray();
+	}
+
+	protected byte[] encrypt(byte[] plaintext, String password) {
+		final StandardPBEByteEncryptor encryptor = new StandardPBEByteEncryptor();
+		encryptor.setPassword(password);
+		encryptor.initialize();
+		return encryptor.encrypt(plaintext);
+	}
+
+	protected byte[] decrypt(byte[] ciphertext, String password) {
+		final StandardPBEByteEncryptor encryptor = new StandardPBEByteEncryptor();
+		encryptor.setPassword(password);
+		encryptor.initialize();
+		return encryptor.decrypt(ciphertext);
 	}
 
 	@Override

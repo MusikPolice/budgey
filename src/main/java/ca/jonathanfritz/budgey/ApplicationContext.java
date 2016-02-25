@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import ca.jonathanfritz.budgey.guice.BudgeyModule;
 import ca.jonathanfritz.budgey.guice.CredentialsModule;
-import ca.jonathanfritz.budgey.services.ManagedService;
+import ca.jonathanfritz.budgey.service.ManagedService;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;

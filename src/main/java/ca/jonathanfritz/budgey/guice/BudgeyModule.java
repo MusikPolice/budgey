@@ -6,7 +6,7 @@ import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ca.jonathanfritz.budgey.services.ManagedService;
+import ca.jonathanfritz.budgey.service.ManagedService;
 import ca.jonathanfritz.budgey.util.jackson.ObjectMapperFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;

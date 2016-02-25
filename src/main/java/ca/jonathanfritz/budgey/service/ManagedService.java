@@ -1,4 +1,4 @@
-package ca.jonathanfritz.budgey.services;
+package ca.jonathanfritz.budgey.service;
 
 
 /**
