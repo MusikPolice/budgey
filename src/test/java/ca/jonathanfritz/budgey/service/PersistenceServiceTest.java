@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class PersistenceServiceTest {
 
+	private final EncryptionService encryptionService = new EncryptionService();
 	private final ObjectMapper objectMapper = ObjectMapperFactory.getObjectMapper();
 
 	@Test
@@ -33,7 +34,7 @@ public class PersistenceServiceTest {
 		final Credentials credentials = new Credentials(username, password);
 
 		try {
-			final PersistenceService persistenceService = new PersistenceService(credentials, objectMapper);
+			final PersistenceService persistenceService = new PersistenceService(credentials, encryptionService, objectMapper);
 			persistenceService.start();
 
 			// the profile should be empty
@@ -60,7 +61,7 @@ public class PersistenceServiceTest {
 		final Credentials credentials = new Credentials(username, password);
 
 		try {
-			PersistenceService persistenceService = new PersistenceService(credentials, objectMapper);
+			PersistenceService persistenceService = new PersistenceService(credentials, encryptionService, objectMapper);
 			persistenceService.start();
 
 			// add an account to the profile
@@ -74,7 +75,7 @@ public class PersistenceServiceTest {
 			Assert.assertThat(Files.size(credentials.getPath()), IsNot.not(IsEqual.equalTo(0L)));
 
 			// re-load the profile and verify
-			persistenceService = new PersistenceService(credentials, objectMapper);
+			persistenceService = new PersistenceService(credentials, encryptionService, objectMapper);
 			persistenceService.start();
 
 			final Profile profile = persistenceService.getProfile();
@@ -93,37 +94,11 @@ public class PersistenceServiceTest {
 
 	@Test
 	public void zipTest() throws IOException {
-		final PersistenceService persistenceService = new PersistenceService(null, objectMapper);
+		final PersistenceService persistenceService = new PersistenceService(null, encryptionService, objectMapper);
 
 		final byte[] data = UUID.randomUUID().toString().getBytes();
 		final byte[] zipped = persistenceService.zip(data);
 		final byte[] unzipped = persistenceService.unzip(zipped);
-
-		Assert.assertArrayEquals(data, unzipped);
-	}
-
-	@Test
-	public void encryptionTest() {
-		final PersistenceService persistenceService = new PersistenceService(null, objectMapper);
-
-		final String password = UUID.randomUUID().toString();
-		final byte[] data = UUID.randomUUID().toString().getBytes();
-		final byte[] encrypted = persistenceService.encrypt(data, password);
-		final byte[] decrypted = persistenceService.decrypt(encrypted, password);
-
-		Assert.assertArrayEquals(data, decrypted);
-	}
-
-	@Test
-	public void zipEncryptTest() throws IOException {
-		final PersistenceService persistenceService = new PersistenceService(null, objectMapper);
-
-		final String password = UUID.randomUUID().toString();
-		final byte[] data = UUID.randomUUID().toString().getBytes();
-		final byte[] zipped = persistenceService.zip(data);
-		final byte[] encrypted = persistenceService.encrypt(zipped, password);
-		final byte[] decrypted = persistenceService.decrypt(encrypted, password);
-		final byte[] unzipped = persistenceService.unzip(decrypted);
 
 		Assert.assertArrayEquals(data, unzipped);
 	}

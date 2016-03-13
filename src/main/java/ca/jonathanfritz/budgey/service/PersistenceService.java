@@ -14,7 +14,6 @@ import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.io.IOUtils;
-import org.jasypt.encryption.pbe.StandardPBEByteEncryptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,6 +26,7 @@ import com.google.inject.Inject;
 public class PersistenceService implements ManagedService {
 
 	private final Credentials credentials;
+	private final EncryptionService encryptionService;
 	private final ObjectMapper objectMapper;
 	private Profile profile;
 
@@ -35,8 +35,9 @@ public class PersistenceService implements ManagedService {
 	private final static Logger log = LoggerFactory.getLogger(PersistenceService.class);
 
 	@Inject
-	public PersistenceService(Credentials credentials, ObjectMapper objectMapper) {
+	public PersistenceService(Credentials credentials, EncryptionService encryptionService, ObjectMapper objectMapper) {
 		this.credentials = credentials;
+		this.encryptionService = encryptionService;
 		this.objectMapper = objectMapper;
 	}
 
@@ -51,7 +52,7 @@ public class PersistenceService implements ManagedService {
 
 		try (final FileInputStream in = new FileInputStream(profileFile)) {
 			final byte[] encrypted = IOUtils.toByteArray(in);
-			final byte[] zipped = decrypt(encrypted, credentials.getPassword());
+			final byte[] zipped = encryptionService.decrypt(encrypted, credentials.getPassword());
 			final byte[] data = unzip(zipped);
 			profile = objectMapper.readValue(data, Profile.class);
 		}
@@ -76,7 +77,7 @@ public class PersistenceService implements ManagedService {
 			try (FileOutputStream out = new FileOutputStream(profileFile)) {
 				final byte[] data = objectMapper.writeValueAsBytes(profile);
 				final byte[] zipped = zip(data);
-				final byte[] encrypted = encrypt(zipped, credentials.getPassword());
+				final byte[] encrypted = encryptionService.encrypt(zipped, credentials.getPassword());
 				out.write(encrypted);
 			}
 
@@ -112,20 +113,6 @@ public class PersistenceService implements ManagedService {
 			}
 		}
 		return out.toByteArray();
-	}
-
-	protected byte[] encrypt(byte[] plaintext, String password) {
-		final StandardPBEByteEncryptor encryptor = new StandardPBEByteEncryptor();
-		encryptor.setPassword(password);
-		encryptor.initialize();
-		return encryptor.encrypt(plaintext);
-	}
-
-	protected byte[] decrypt(byte[] ciphertext, String password) {
-		final StandardPBEByteEncryptor encryptor = new StandardPBEByteEncryptor();
-		encryptor.setPassword(password);
-		encryptor.initialize();
-		return encryptor.decrypt(ciphertext);
 	}
 
 	@Override

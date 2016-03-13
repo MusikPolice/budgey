@@ -36,8 +36,6 @@ public class BudgeyCLI {
 	}
 
 	public void run() {
-		System.out.println("Budgey - v1");
-		System.out.println("A budgeting tool for people with dollars and sense");
 		while (true) {
 			System.out.println("\nOptions:");
 			for (int i = 1; i <= commands.size(); i++) {
@@ -83,7 +81,7 @@ public class BudgeyCLI {
 		}
 	}
 
-	private String getString() {
+	private static String getString() {
 		final BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
 		while (true) {
 			System.out.print("> ");
@@ -97,8 +95,14 @@ public class BudgeyCLI {
 
 	public static void main(String[] args) throws IOException {
 		log.debug("Initializing Budgey CLI");
+
+		System.out.println("Budgey - v1");
+		System.out.println("A budgeting tool for people with dollars and sense\n");
+		System.out.println("Enter your password:");
+		final String password = getString();
+
 		// TODO: get an (optional) username and a (not optional) password from the user
-		try (final ApplicationContext budgey = new ApplicationContext("", new BudgeyCLIModule())) {
+		try (final ApplicationContext budgey = new ApplicationContext(password, new BudgeyCLIModule())) {
 			// the run method of the CLI will block until the user invokes the exit command
 			// at that time, the Budgey application context will be stopped
 			final BudgeyCLI cli = budgey.getInjector().getInstance(BudgeyCLI.class);
