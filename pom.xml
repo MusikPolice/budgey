@@ -99,6 +99,18 @@
 			<version>1.54</version>
 		</dependency>
 
+		<!-- JDBI for in-memory relational database support -->
+		<dependency>
+			<groupId>org.jdbi</groupId>
+			<artifactId>jdbi</artifactId>
+			<version>2.72</version>
+		</dependency>
+		<dependency>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
+			<version>1.4.191</version>
+		</dependency>				
+
 		<!-- Logging -->
 		<dependency>
 			<groupId>org.slf4j</groupId>

@@ -46,6 +46,10 @@ public class EncryptionService {
 	}
 
 	protected byte[] decrypt(byte[] ciphertext, String password) {
+		if (ciphertext == null || ciphertext.length == 0) {
+			return new byte[] {};
+		}
+
 		final StandardPBEByteEncryptor encryptor = new StandardPBEByteEncryptor();
 		encryptor.setAlgorithm(algorithm);
 		encryptor.setPassword(password);

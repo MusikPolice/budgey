@@ -17,6 +17,7 @@ import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ca.jonathanfritz.budgey.Account;
 import ca.jonathanfritz.budgey.Credentials;
 import ca.jonathanfritz.budgey.Profile;
 
@@ -27,17 +28,18 @@ public class PersistenceService implements ManagedService {
 
 	private final Credentials credentials;
 	private final EncryptionService encryptionService;
+	private final AccountService accountService;
 	private final ObjectMapper objectMapper;
-	private Profile profile;
 
 	public final static String JSON_FILE_NAME = "profile.json";
 
 	private final static Logger log = LoggerFactory.getLogger(PersistenceService.class);
 
 	@Inject
-	public PersistenceService(Credentials credentials, EncryptionService encryptionService, ObjectMapper objectMapper) {
+	public PersistenceService(Credentials credentials, EncryptionService encryptionService, AccountService accountService, ObjectMapper objectMapper) {
 		this.credentials = credentials;
 		this.encryptionService = encryptionService;
+		this.accountService = accountService;
 		this.objectMapper = objectMapper;
 	}
 
@@ -46,33 +48,37 @@ public class PersistenceService implements ManagedService {
 		final File profileFile = getProfileFile(false);
 		if (Files.size(profileFile.toPath()) == 0) {
 			// this is a new profile file, so there's nothing to deserialize
-			profile = new Profile();
 			return;
 		}
 
+		Profile profile = null;
 		try (final FileInputStream in = new FileInputStream(profileFile)) {
 			final byte[] encrypted = IOUtils.toByteArray(in);
 			final byte[] zipped = encryptionService.decrypt(encrypted, credentials.getPassword());
 			final byte[] data = unzip(zipped);
 			profile = objectMapper.readValue(data, Profile.class);
 		}
-	}
 
-	/**
-	 * Returns the profile for the current user.<br/>
-	 * The returned profile will be automatically saved when the application is closed, or whenever the {@link #save()}
-	 * method is called.
-	 */
-	public Profile getProfile() {
-		return profile;
+		// TODO: load profile into an in-memory database
+		accountService.initialize();
+		for (final Account account : profile.getAccounts()) {
+			accountService.insertAccount(account);
+		}
 	}
 
 	public boolean save() {
 		try {
 			// TODO: only create backup if the profile has actually changed. This may require deserializing contents of
-			// profile.db and comparing them to the profile we're trying to save.
+			// profile.db and comparing them to the profile we're trying to save, or tracking updates in a log table
 			log.debug("Saving profile");
 			final File profileFile = getProfileFile(true);
+
+			// TODO: pull all data out of the db and put it into profile - need a service layer here that populates
+			// transactions in accounts
+			final Profile profile = new Profile();
+			for (final Account account : accountService.getAccounts()) {
+				profile.addAccount(account);
+			}
 
 			try (FileOutputStream out = new FileOutputStream(profileFile)) {
 				final byte[] data = objectMapper.writeValueAsBytes(profile);

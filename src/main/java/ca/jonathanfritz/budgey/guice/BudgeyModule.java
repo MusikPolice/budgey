@@ -3,14 +3,21 @@ package ca.jonathanfritz.budgey.guice;
 import java.util.Set;
 
 import org.reflections.Reflections;
+import org.skife.jdbi.v2.DBI;
+import org.skife.jdbi.v2.logging.SLF4JLog;
+import org.skife.jdbi.v2.logging.SLF4JLog.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ca.jonathanfritz.budgey.dao.AccountDAO;
+import ca.jonathanfritz.budgey.dao.TransactionDAO;
 import ca.jonathanfritz.budgey.service.ManagedService;
+import ca.jonathanfritz.budgey.service.PersistenceService;
 import ca.jonathanfritz.budgey.util.jackson.ObjectMapperFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 
@@ -20,6 +27,7 @@ import com.google.inject.multibindings.Multibinder;
 public class BudgeyModule extends AbstractModule {
 
 	private final Logger log = LoggerFactory.getLogger(BudgeyModule.class);
+	private final Logger dbLog = LoggerFactory.getLogger(PersistenceService.class);
 
 	@Override
 	protected void configure() {
@@ -37,5 +45,27 @@ public class BudgeyModule extends AbstractModule {
 
 		// globally configured ObjectMapper
 		bind(ObjectMapper.class).toInstance(ObjectMapperFactory.getObjectMapper());
+	}
+
+	@Provides
+	@Singleton
+	public DBI providesDBI() {
+		final DBI dbi = new DBI("jdbc:h2:mem:budgey");
+		dbi.setSQLLog(new SLF4JLog(dbLog, Level.INFO));
+		return dbi;
+	}
+
+	@Provides
+	@Singleton
+	public AccountDAO providesAccountDao(DBI dbi) {
+		final AccountDAO dao = dbi.onDemand(AccountDAO.class);
+		return dao;
+	}
+
+	@Provides
+	@Singleton
+	public TransactionDAO providesTransactionDAO(DBI dbi) {
+		final TransactionDAO dao = dbi.onDemand(TransactionDAO.class);
+		return dao;
 	}
 }

@@ -1,8 +1,17 @@
 package ca.jonathanfritz.budgey;
 
+import java.math.BigDecimal;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.HashSet;
 import java.util.Set;
 
+import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
+import org.skife.jdbi.v2.StatementContext;
+import org.skife.jdbi.v2.tweak.ResultSetMapper;
+
+import ca.jonathanfritz.budgey.dao.AccountDAO;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -11,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * Represents an account at a financial institution. Two accounts are equal if and only if they have the same account
  * number.
  */
-public class Account {
+public class Account implements ResultSetMapper<Account> {
 
 	private final String accountNumber;
 	private final AccountType type;
@@ -70,5 +79,18 @@ public class Account {
 			return false;
 		}
 		return true;
+	}
+
+	/**
+	 * Maps an in-memory database row into a useful object. See {@link AccountDAO} for more details.
+	 */
+	@Override
+	public Account map(int index, ResultSet r, StatementContext ctx) throws SQLException {
+		final String accountNumber = r.getString("account_number");
+		final AccountType accountType = AccountType.fromString(r.getString("type"));
+		final BigDecimal amount = r.getBigDecimal("balance");
+		final CurrencyUnit currency = CurrencyUnit.of(r.getString("currency"));
+		final Money balance = Money.of(currency, amount);
+		return new Account(accountNumber, accountType, balance, new HashSet<Transaction>());
 	}
 }

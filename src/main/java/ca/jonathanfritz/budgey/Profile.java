@@ -42,4 +42,8 @@ public class Profile {
 	public Set<Account> getAccounts() {
 		return accounts;
 	}
+
+	public void addAccount(Account account) {
+		accounts.add(account);
+	}
 }
