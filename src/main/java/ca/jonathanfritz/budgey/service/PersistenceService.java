@@ -1,7 +1,5 @@
 package ca.jonathanfritz.budgey.service;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -9,9 +7,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
@@ -28,17 +23,17 @@ public class PersistenceService implements ManagedService {
 
 	private final Credentials credentials;
 	private final EncryptionService encryptionService;
+	private final CompressionService compressionService;
 	private final AccountService accountService;
 	private final ObjectMapper objectMapper;
-
-	public final static String JSON_FILE_NAME = "profile.json";
 
 	private final static Logger log = LoggerFactory.getLogger(PersistenceService.class);
 
 	@Inject
-	public PersistenceService(Credentials credentials, EncryptionService encryptionService, AccountService accountService, ObjectMapper objectMapper) {
+	public PersistenceService(Credentials credentials, EncryptionService encryptionService, CompressionService compressionService, AccountService accountService, ObjectMapper objectMapper) {
 		this.credentials = credentials;
 		this.encryptionService = encryptionService;
+		this.compressionService = compressionService;
 		this.accountService = accountService;
 		this.objectMapper = objectMapper;
 	}
@@ -51,15 +46,16 @@ public class PersistenceService implements ManagedService {
 			return;
 		}
 
+		// read the profile from disk
 		Profile profile = null;
 		try (final FileInputStream in = new FileInputStream(profileFile)) {
 			final byte[] encrypted = IOUtils.toByteArray(in);
 			final byte[] zipped = encryptionService.decrypt(encrypted, credentials.getPassword());
-			final byte[] data = unzip(zipped);
+			final byte[] data = compressionService.unzip(zipped);
 			profile = objectMapper.readValue(data, Profile.class);
 		}
 
-		// TODO: load profile into an in-memory database
+		// load profile into an in-memory database
 		accountService.initialize();
 		for (final Account account : profile.getAccounts()) {
 			accountService.insertAccount(account);
@@ -73,16 +69,16 @@ public class PersistenceService implements ManagedService {
 			log.debug("Saving profile");
 			final File profileFile = getProfileFile(true);
 
-			// TODO: pull all data out of the db and put it into profile - need a service layer here that populates
-			// transactions in accounts
+			// pull all data out of the db and put it into profile
 			final Profile profile = new Profile();
 			for (final Account account : accountService.getAccounts()) {
 				profile.addAccount(account);
 			}
 
+			// write the profile out to disk
 			try (FileOutputStream out = new FileOutputStream(profileFile)) {
 				final byte[] data = objectMapper.writeValueAsBytes(profile);
-				final byte[] zipped = zip(data);
+				final byte[] zipped = compressionService.zip(data);
 				final byte[] encrypted = encryptionService.encrypt(zipped, credentials.getPassword());
 				out.write(encrypted);
 			}
@@ -93,32 +89,6 @@ public class PersistenceService implements ManagedService {
 			return false;
 		}
 		return true;
-	}
-
-	protected byte[] zip(byte[] uncompressed) throws IOException {
-		final ByteArrayOutputStream out = new ByteArrayOutputStream();
-		try (final ZipOutputStream zip = new ZipOutputStream(out)) {
-			final ZipEntry entry = new ZipEntry(JSON_FILE_NAME);
-			zip.putNextEntry(entry);
-			zip.write(uncompressed);
-			zip.closeEntry();
-		}
-		return out.toByteArray();
-	}
-
-	protected byte[] unzip(byte[] compressed) throws IOException {
-		final ByteArrayInputStream in = new ByteArrayInputStream(compressed);
-		final ByteArrayOutputStream out = new ByteArrayOutputStream();
-		try (final ZipInputStream zip = new ZipInputStream(in)) {
-			zip.getNextEntry();
-
-			int count = 0;
-			final byte[] buff = new byte[1024];
-			while ((count = zip.read(buff, 0, buff.length)) != -1) {
-				out.write(buff, 0, count);
-			}
-		}
-		return out.toByteArray();
 	}
 
 	@Override

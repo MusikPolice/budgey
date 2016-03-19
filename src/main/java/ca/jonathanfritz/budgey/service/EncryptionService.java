@@ -12,8 +12,8 @@ public class EncryptionService {
 	private String algorithm;
 
 	public EncryptionService() {
-		// this is the default algorithm that ships with jasypt
-		// it'd be nice to upgrade to something stronger, but java's encryption situation is confusing at best
+		// this is the default algorithm that ships with jasypt. it'd be nice to upgrade to something stronger, but
+		// java's encryption situation is confusing at best
 		this("PBEWithMD5AndDES");
 	}
 
