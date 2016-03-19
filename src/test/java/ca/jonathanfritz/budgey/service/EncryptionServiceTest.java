@@ -6,8 +6,14 @@ import org.hamcrest.core.IsEqual;
 import org.junit.Assert;
 import org.junit.Test;
 
+/**
+ * Unit tests for the {@link EncryptionService}
+ */
 public class EncryptionServiceTest {
 
+	/**
+	 * Ensures that data can be encrypted and decrypted using the default algorithm
+	 */
 	@Test
 	public void encryptionTest() {
 		final EncryptionService encryptionService = new EncryptionService();
@@ -20,6 +26,10 @@ public class EncryptionServiceTest {
 		Assert.assertArrayEquals(data, decrypted);
 	}
 
+	/**
+	 * Queries the list of available algorithms and attempts an encryption and decryption step with each. Those that
+	 * function without issue are printed to the console.
+	 */
 	@Test
 	public void availableAlgorithmsTest() {
 		System.out.println("Available Encryption Algorithms:");
