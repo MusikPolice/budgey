@@ -9,15 +9,16 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
 import org.apache.commons.io.IOUtils;
+import org.jasypt.exceptions.EncryptionOperationNotPossibleException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.Inject;
 
 import ca.jonathanfritz.budgey.Account;
 import ca.jonathanfritz.budgey.Credentials;
 import ca.jonathanfritz.budgey.Profile;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.inject.Inject;
 
 public class PersistenceService implements ManagedService {
 
@@ -40,25 +41,26 @@ public class PersistenceService implements ManagedService {
 
 	@Override
 	public void start() throws IOException {
-		final File profileFile = getProfileFile(false);
-		if (Files.size(profileFile.toPath()) == 0) {
-			// this is a new profile file, so there's nothing to deserialize
-			return;
-		}
-
-		// read the profile from disk
 		Profile profile = null;
-		try (final FileInputStream in = new FileInputStream(profileFile)) {
-			final byte[] encrypted = IOUtils.toByteArray(in);
-			final byte[] zipped = encryptionService.decrypt(encrypted, credentials.getPassword());
-			final byte[] data = compressionService.unzip(zipped);
-			profile = objectMapper.readValue(data, Profile.class);
+		final File profileFile = getProfileFile(false);
+		if (Files.size(profileFile.toPath()) != 0) {
+			// read the profile from disk
+			try (final FileInputStream in = new FileInputStream(profileFile)) {
+				final byte[] encrypted = IOUtils.toByteArray(in);
+				final byte[] zipped = encryptionService.decrypt(encrypted, credentials.getPassword());
+				final byte[] data = compressionService.unzip(zipped);
+				profile = objectMapper.readValue(data, Profile.class);
+			} catch (final EncryptionOperationNotPossibleException ex) {
+				log.error("Failed to decrypt profile");
+			}
 		}
 
 		// load profile into an in-memory database
 		accountService.initialize();
-		for (final Account account : profile.getAccounts()) {
-			accountService.insertAccount(account);
+		if (profile != null) {
+			for (final Account account : profile.getAccounts()) {
+				accountService.insertAccount(account);
+			}
 		}
 	}
 
@@ -97,6 +99,14 @@ public class PersistenceService implements ManagedService {
 	}
 
 	/**
+	 * Deletes the profile and backup file. Only intended for use in tests
+	 */
+	protected void deleteProfile() throws IOException {
+		Files.delete(credentials.getPath());
+		Files.delete(credentials.getBackupPath());
+	}
+
+	/**
 	 * Attempts to create a profile.db file inside of a .budgey folder in the users' home directory.<br/>
 	 * @param backup if true, and profile.db already exists, a backup of profile.db will be made as profile.bak
 	 * @return a {@link File} handler that points to the profile.db file
@@ -120,7 +130,7 @@ public class PersistenceService implements ManagedService {
 				Files.copy(path, backupPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
 			} catch (final IOException e) {
 				throw new IOException("Failed to copy existing profile file " + path.toString() + " to "
-						+ backupPath.toString(), e);
+				        + backupPath.toString(), e);
 			}
 		}
 		return new File(path.toUri());

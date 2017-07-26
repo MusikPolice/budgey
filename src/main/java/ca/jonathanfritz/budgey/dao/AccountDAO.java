@@ -10,11 +10,11 @@ import org.skife.jdbi.v2.sqlobject.customizers.RegisterMapper;
 
 import ca.jonathanfritz.budgey.Account;
 
-@RegisterMapper(Account.class)
+@RegisterMapper(AccountResultSetMapper.class)
 public interface AccountDAO {
 
 	// TODO: account type should be foreign-keyed to a table of types?
-	@SqlUpdate("CREATE TABLE account (account_number VARCHAR(255) PRIMARY KEY, type VARCHAR(20), balance DECIMAL, currency VARCHAR(3));")
+	@SqlUpdate("CREATE TABLE IF NOT EXISTS account (account_number VARCHAR(255) PRIMARY KEY, type VARCHAR(20), balance DECIMAL, currency VARCHAR(3));")
 	void createTable();
 
 	/**

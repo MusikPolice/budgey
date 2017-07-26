@@ -1,13 +1,8 @@
 package ca.jonathanfritz.budgey;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
-import org.skife.jdbi.v2.StatementContext;
-import org.skife.jdbi.v2.tweak.ResultSetMapper;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -16,7 +11,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * Represents a transaction at a financial institution. Two transactions are equal if and only if they share the same
  * transaction date, description and amount.
  */
-public class Transaction implements ResultSetMapper<Transaction> {
+public class Transaction {
 	private final String accountNumber;
 	private final DateTime dateUtc;
 	private final int order;
@@ -188,11 +183,5 @@ public class Transaction implements ResultSetMapper<Transaction> {
 		public Transaction build() {
 			return new Transaction(this);
 		}
-	}
-
-	@Override
-	public Transaction map(int index, ResultSet r, StatementContext ctx) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
 	}
 }

@@ -50,7 +50,9 @@ public class BudgeyModule extends AbstractModule {
 	@Provides
 	@Singleton
 	public DBI providesDBI() {
-		final DBI dbi = new DBI("jdbc:h2:mem:budgey");
+		// create an in-memory database that will exist until the vm dies
+		// see http://stackoverflow.com/a/5936988/591374
+		final DBI dbi = new DBI("jdbc:h2:mem:budgey;DB_CLOSE_DELAY=-1");
 		dbi.setSQLLog(new SLF4JLog(dbLog, Level.INFO));
 		return dbi;
 	}

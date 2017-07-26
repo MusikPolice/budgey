@@ -7,6 +7,13 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.SortedSet;
 
+import org.joda.money.Money;
+import org.joda.time.DateTime;
+
+import com.google.common.collect.Lists;
+
+import ca.jonathanfritz.budgey.Transaction;
+import ca.jonathanfritz.budgey.importer.AbstractParser;
 import net.sf.ofx4j.domain.data.ResponseEnvelope;
 import net.sf.ofx4j.domain.data.ResponseMessage;
 import net.sf.ofx4j.domain.data.ResponseMessageSet;
@@ -15,14 +22,10 @@ import net.sf.ofx4j.domain.data.creditcard.CreditCardStatementResponseTransactio
 import net.sf.ofx4j.io.AggregateUnmarshaller;
 import net.sf.ofx4j.io.OFXParseException;
 
-import org.joda.money.Money;
-import org.joda.time.DateTime;
-
-import ca.jonathanfritz.budgey.Transaction;
-import ca.jonathanfritz.budgey.importer.AbstractParser;
-
-import com.google.common.collect.Lists;
-
+/**
+ * Parses Open Financial Exchange (*.ofx) transaction files, sometimes also called Microsoft Money files
+ * See https://en.wikipedia.org/wiki/Open_Financial_Exchange
+ */
 public class OfxParser extends AbstractParser {
 
 	@Override
@@ -58,13 +61,7 @@ public class OfxParser extends AbstractParser {
 
 						final DateTime date = new DateTime(ofxTransaction.getDatePosted()).withTimeAtStartOfDay();
 
-						final Transaction transaction = Transaction.newBuilder()
-								.setAccountNumber(accountNumber)
-								.setAmount(Money.parse(String.format("%s %.2f", currencyCode, ofxTransaction.getAmount())))
-								.setDescription(ofxTransaction.getName())
-								.setOrder(getOrderForDate(date))
-								.setDateUtc(date)
-								.build();
+						final Transaction transaction = Transaction.newBuilder().setAccountNumber(accountNumber).setAmount(Money.parse(String.format("%s %.2f", currencyCode, ofxTransaction.getAmount()))).setDescription(ofxTransaction.getName()).setOrder(getOrderForDate(date)).setDateUtc(date).build();
 
 						transactions.add(transaction);
 
@@ -83,13 +80,7 @@ public class OfxParser extends AbstractParser {
 
 						final DateTime date = new DateTime(ofxTransaction.getDatePosted()).withTimeAtStartOfDay();
 
-						final Transaction transaction = Transaction.newBuilder()
-								.setAccountNumber(accountNumber)
-								.setAmount(Money.parse(String.format("%s %.2f", currencyCode, ofxTransaction.getAmount())))
-								.setDescription(ofxTransaction.getName())
-								.setOrder(getOrderForDate(date))
-								.setDateUtc(date)
-								.build();
+						final Transaction transaction = Transaction.newBuilder().setAccountNumber(accountNumber).setAmount(Money.parse(String.format("%s %.2f", currencyCode, ofxTransaction.getAmount()))).setDescription(ofxTransaction.getName()).setOrder(getOrderForDate(date)).setDateUtc(date).build();
 
 						transactions.add(transaction);
 

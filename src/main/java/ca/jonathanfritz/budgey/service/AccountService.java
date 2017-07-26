@@ -1,7 +1,7 @@
 package ca.jonathanfritz.budgey.service;
 
 import java.util.HashSet;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import ca.jonathanfritz.budgey.Account;
@@ -9,8 +9,6 @@ import ca.jonathanfritz.budgey.Transaction;
 import ca.jonathanfritz.budgey.dao.AccountDAO;
 import ca.jonathanfritz.budgey.dao.TransactionDAO;
 
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 
 public class AccountService {
@@ -31,32 +29,28 @@ public class AccountService {
 
 	public void insertAccount(Account account) {
 		accountDao.insertAccount(
-				account.getAccountNumber(),
-				account.getType().getType(),
-				account.getBalance().getAmount(),
-				account.getBalance().getCurrencyUnit().getCode());
+		        account.getAccountNumber(),
+		        account.getType().getType(),
+		        account.getBalance().getAmount(),
+		        account.getBalance().getCurrencyUnit().getCode());
 
 		for (final Transaction transaction : account.getTransactions()) {
 			transactionDao.insertTransaction(
-					transaction.getAccountNumber(),
-					transaction.getDateUtc().getMillis(),
-					transaction.getOrder(),
-					transaction.getDescription(),
-					transaction.getAmount().getAmount());	// TODO: need to store currency code
+			        transaction.getAccountNumber(),
+			        transaction.getDateUtc().getMillis(),
+			        transaction.getOrder(),
+			        transaction.getDescription(),
+			        transaction.getAmount().getAmount(),
+			        transaction.getAmount().getCurrencyUnit().getCurrencyCode());
 		}
 	}
 
 	public Set<Account> getAccounts() {
 		final Set<Account> accounts = new HashSet<>();
 		for (final Account account : accountDao.getAccounts()) {
-			final Set<Transaction> transactions = iteratorToSet(transactionDao.getTransactions(account.getAccountNumber()), Transaction.class);
+			final List<Transaction> transactions = transactionDao.getTransactions(account.getAccountNumber());
 			accounts.add(new Account(account.getAccountNumber(), account.getType(), account.getBalance(), transactions));
 		}
 		return accounts;
 	}
-
-	private <T> Set<T> iteratorToSet(Iterator<T> iterator, Class<T> type) {
-		return Sets.newHashSet(Iterators.filter(iterator, type));
-	}
-
 }
