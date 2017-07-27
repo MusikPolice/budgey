@@ -5,19 +5,19 @@ public enum AccountType {
 	VISA("Visa"),
 	ROYAL_CREDIT_LINE("Royal Credit Line");
 
-	private final String type;
+	private final String friendlyName;
 
-	private AccountType(String type) {
-		this.type = type;
+	private AccountType(String friendlyName) {
+		this.friendlyName = friendlyName;
 	}
 
-	public String getType() {
-		return type;
+	public String getFriendlyName() {
+		return friendlyName;
 	}
 
 	public static AccountType fromString(String type) {
 		for (final AccountType at : AccountType.values()) {
-			if (type.equals(at.type)) {
+			if (type.equals(at.toString())) {
 				return at;
 			}
 		}

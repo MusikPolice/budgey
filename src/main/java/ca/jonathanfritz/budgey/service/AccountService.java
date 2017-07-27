@@ -3,21 +3,34 @@ package ca.jonathanfritz.budgey.service;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
-import ca.jonathanfritz.budgey.Account;
-import ca.jonathanfritz.budgey.Transaction;
-import ca.jonathanfritz.budgey.dao.AccountDAO;
-import ca.jonathanfritz.budgey.dao.TransactionDAO;
+import org.joda.money.CurrencyUnit;
+import org.joda.money.Money;
+import org.skife.jdbi.v2.DBI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
 
+import ca.jonathanfritz.budgey.Account;
+import ca.jonathanfritz.budgey.AccountType;
+import ca.jonathanfritz.budgey.Transaction;
+import ca.jonathanfritz.budgey.dao.AccountDAO;
+import ca.jonathanfritz.budgey.dao.AutoCommittingHandle;
+import ca.jonathanfritz.budgey.dao.TransactionDAO;
+
 public class AccountService {
 
+	private final DBI dbi;
 	private final AccountDAO accountDao;
 	private final TransactionDAO transactionDao;
 
+	private static final Logger log = LoggerFactory.getLogger(AccountService.class);
+
 	@Inject
-	public AccountService(AccountDAO accountDao, TransactionDAO transactionDao) {
+	public AccountService(DBI dbi, AccountDAO accountDao, TransactionDAO transactionDao) {
+		this.dbi = dbi;
 		this.accountDao = accountDao;
 		this.transactionDao = transactionDao;
 	}
@@ -28,29 +41,65 @@ public class AccountService {
 	}
 
 	public void insertAccount(Account account) {
-		accountDao.insertAccount(
-		        account.getAccountNumber(),
-		        account.getType().getType(),
-		        account.getBalance().getAmount(),
-		        account.getBalance().getCurrencyUnit().getCode());
+		// TODO: database transaction!
+		accountDao.insertAccount(account.getAccountNumber(), account.getType(), account.getBalance());
 
 		for (final Transaction transaction : account.getTransactions()) {
-			transactionDao.insertTransaction(
-			        transaction.getAccountNumber(),
-			        transaction.getDateUtc().getMillis(),
-			        transaction.getOrder(),
-			        transaction.getDescription(),
-			        transaction.getAmount().getAmount(),
-			        transaction.getAmount().getCurrencyUnit().getCurrencyCode());
+			transactionDao.insertTransaction(transaction.getAccountNumber(), transaction.getDateUtc()
+			        .getMillis(), transaction.getOrder(), transaction.getDescription(), transaction.getAmount()
+			                .getAmount(), transaction.getAmount()
+			                        .getCurrencyUnit()
+			                        .getCurrencyCode());
+		}
+	}
+
+	public void insertTransactions(List<Transaction> transactions) {
+		try (AutoCommittingHandle handle = new AutoCommittingHandle(dbi)) {
+			try {
+				// make sure accounts exist
+				final Set<Account> existingAccounts = getAccounts();
+
+				final Set<Account> accountsToAdd = transactions.stream()
+				        .map(Transaction::getAccountNumber)
+				        .distinct()
+				        .filter(accountNumber -> existingAccounts.stream()
+				                .noneMatch(existingAccount -> existingAccount.getAccountNumber()
+				                        .equals(accountNumber)))
+				        // TODO: we don't know details about this account yet
+				        .map(accountNumber -> new Account(accountNumber, AccountType.CHECKING, Money
+				                .zero(CurrencyUnit.CAD), transactions))
+				        .collect(Collectors.toSet());
+				for (final Account account : accountsToAdd) {
+					insertAccount(account);
+				}
+
+				for (final Transaction t : transactions) {
+					// TODO: need a transaction service - maybe it should handle creating the accounts?
+					System.out.println(t.toString());
+				}
+			} catch (final Exception ex) {
+				log.error("Failed to insert tranactions", ex);
+				handle.rollback();
+			}
 		}
 	}
 
 	public Set<Account> getAccounts() {
-		final Set<Account> accounts = new HashSet<>();
-		for (final Account account : accountDao.getAccounts()) {
-			final List<Transaction> transactions = transactionDao.getTransactions(account.getAccountNumber());
-			accounts.add(new Account(account.getAccountNumber(), account.getType(), account.getBalance(), transactions));
+		try (AutoCommittingHandle handle = new AutoCommittingHandle(dbi)) {
+			try {
+				final Set<Account> accounts = new HashSet<>();
+				for (final Account account : accountDao.getAccounts(handle)) {
+
+					// TODO: this needs to be in the database transaction
+					final List<Transaction> transactions = transactionDao.getTransactions(account.getAccountNumber());
+					accounts.add(new Account(account.getAccountNumber(), account.getType(), account
+					        .getBalance(), transactions));
+				}
+				return accounts;
+			} catch (final Exception ex) {
+				handle.rollback();
+				throw new RuntimeException("Failed to insert tranactions", ex);
+			}
 		}
-		return accounts;
 	}
 }

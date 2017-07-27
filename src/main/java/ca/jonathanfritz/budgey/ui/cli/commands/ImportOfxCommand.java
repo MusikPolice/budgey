@@ -4,16 +4,9 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import org.joda.money.CurrencyUnit;
-import org.joda.money.Money;
 
 import com.google.inject.Inject;
 
-import ca.jonathanfritz.budgey.Account;
-import ca.jonathanfritz.budgey.AccountType;
 import ca.jonathanfritz.budgey.Transaction;
 import ca.jonathanfritz.budgey.importer.Parser;
 import ca.jonathanfritz.budgey.importer.ofx.OfxParser;
@@ -67,33 +60,11 @@ public class ImportOfxCommand implements Command {
 
 		final Parser parser = new OfxParser();
 
-		List<Transaction> transactions;
 		try {
-			transactions = parser.parse(Paths.get(absolutePath));
+			final List<Transaction> transactions = parser.parse(Paths.get(absolutePath));
+			accountService.insertTransactions(transactions);
 		} catch (final IOException e) {
 			throw new RuntimeException("Failed to import file", e);
-		}
-
-		// make sure accounts exist
-		// TODO: this should all be done in one big transaction
-		final Set<Account> existingAccounts = accountService.getAccounts();
-		final Set<Account> accountsToAdd = transactions.stream()
-		        .map(Transaction::getAccountNumber)
-		        .distinct()
-		        .filter(accountNumber -> existingAccounts.stream()
-		                .noneMatch(existingAccount -> existingAccount.getAccountNumber()
-		                        .equals(accountNumber)))
-		        // TODO: we don't know details about this account yet
-		        .map(accountNumber -> new Account(accountNumber, AccountType.CHECKING, Money
-		                .zero(CurrencyUnit.CAD), transactions))
-		        .collect(Collectors.toSet());
-		for (final Account account : accountsToAdd) {
-			accountService.insertAccount(account);
-		}
-
-		for (final Transaction t : transactions) {
-			// TODO: need a transaction service - maybe it should handle creating the accounts?
-			System.out.println(t.toString());
 		}
 	}
 }

@@ -9,17 +9,17 @@ import org.skife.jdbi.v2.logging.SLF4JLog.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ca.jonathanfritz.budgey.dao.AccountDAO;
-import ca.jonathanfritz.budgey.dao.TransactionDAO;
-import ca.jonathanfritz.budgey.service.ManagedService;
-import ca.jonathanfritz.budgey.service.PersistenceService;
-import ca.jonathanfritz.budgey.util.jackson.ObjectMapperFactory;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
+
+import ca.jonathanfritz.budgey.dao.AccountDAO;
+import ca.jonathanfritz.budgey.dao.TransactionDAO;
+import ca.jonathanfritz.budgey.service.ManagedService;
+import ca.jonathanfritz.budgey.service.PersistenceService;
+import ca.jonathanfritz.budgey.util.jackson.ObjectMapperFactory;
 
 /**
  * This module registers all things that are necessary for both the GUI and CLI versions of Budgey
@@ -37,10 +37,13 @@ public class BudgeyModule extends AbstractModule {
 		log.debug("Registering managed services...");
 		final Reflections reflections = new Reflections("ca.jonathanfritz.budgey");
 		final Set<Class<? extends ManagedService>> services = reflections.getSubTypesOf(ManagedService.class);
-		final Multibinder<ManagedService> managedServiceBinder = Multibinder.newSetBinder(binder(), ManagedService.class);
+		final Multibinder<ManagedService> managedServiceBinder = Multibinder
+		        .newSetBinder(binder(), ManagedService.class);
 		for (final Class<? extends ManagedService> clazz : services) {
 			log.debug(clazz.getCanonicalName());
-			managedServiceBinder.addBinding().to(clazz).in(Singleton.class);
+			managedServiceBinder.addBinding()
+			        .to(clazz)
+			        .in(Singleton.class);
 		}
 
 		// globally configured ObjectMapper
@@ -60,14 +63,12 @@ public class BudgeyModule extends AbstractModule {
 	@Provides
 	@Singleton
 	public AccountDAO providesAccountDao(DBI dbi) {
-		final AccountDAO dao = dbi.onDemand(AccountDAO.class);
-		return dao;
+		return new AccountDAO(dbi);
 	}
 
 	@Provides
 	@Singleton
 	public TransactionDAO providesTransactionDAO(DBI dbi) {
-		final TransactionDAO dao = dbi.onDemand(TransactionDAO.class);
-		return dao;
+		return dbi.onDemand(TransactionDAO.class);
 	}
 }

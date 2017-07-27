@@ -1,17 +1,20 @@
 package ca.jonathanfritz.budgey.ui.cli.commands;
 
-import ca.jonathanfritz.budgey.Transaction;
-import ca.jonathanfritz.budgey.importer.Parser;
-import ca.jonathanfritz.budgey.importer.csv.RoyalBankCSVParser;
-import ca.jonathanfritz.budgey.importer.csv.ScotiabankCSVParser;
-import ca.jonathanfritz.budgey.ui.cli.Command;
-import ca.jonathanfritz.budgey.ui.cli.ParameterSet;
-import ca.jonathanfritz.budgey.ui.cli.ParameterSet.Parameter;
-
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.google.inject.Inject;
+
+import ca.jonathanfritz.budgey.Transaction;
+import ca.jonathanfritz.budgey.importer.Parser;
+import ca.jonathanfritz.budgey.importer.csv.RoyalBankCSVParser;
+import ca.jonathanfritz.budgey.importer.csv.ScotiabankCSVParser;
+import ca.jonathanfritz.budgey.service.AccountService;
+import ca.jonathanfritz.budgey.ui.cli.Command;
+import ca.jonathanfritz.budgey.ui.cli.ParameterSet;
+import ca.jonathanfritz.budgey.ui.cli.ParameterSet.Parameter;
 
 /**
  * Tries to import a file full of transactions.<br />
@@ -19,12 +22,19 @@ import java.util.List;
  */
 public class ImportCsvCommand implements Command {
 
+	private final AccountService accountService;
+
 	private static final String PARSER_KEY = "parser";
 	private static final String FILE_KEY = "file";
 	private static final String ACCOUNT_KEY = "account";
 
 	private static final String ROYAL_BANK_PARSER = "royal";
 	private static final String SCOTIA_BANK_PARSER = "scotia";
+
+	@Inject
+	public ImportCsvCommand(AccountService accountService) {
+		this.accountService = accountService;
+	}
 
 	@Override
 	public String getName() {
@@ -74,15 +84,11 @@ public class ImportCsvCommand implements Command {
 				break;
 		}
 
-		List<Transaction> transactions;
 		try {
-			transactions = parser.parse(Paths.get(absolutePath));
+			final List<Transaction> transactions = parser.parse(Paths.get(absolutePath));
+			accountService.insertTransactions(transactions);
 		} catch (final IOException e) {
 			throw new RuntimeException("Failed to import file", e);
-		}
-
-		for (final Transaction t : transactions) {
-			System.out.println(t.toString());
 		}
 	}
 }
