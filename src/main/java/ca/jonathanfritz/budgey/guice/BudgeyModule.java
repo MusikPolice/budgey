@@ -38,16 +38,20 @@ public class BudgeyModule extends AbstractModule {
 		final Reflections reflections = new Reflections("ca.jonathanfritz.budgey");
 		final Set<Class<? extends ManagedService>> services = reflections.getSubTypesOf(ManagedService.class);
 		final Multibinder<ManagedService> managedServiceBinder = Multibinder
-		        .newSetBinder(binder(), ManagedService.class);
+		                                                                    .newSetBinder(binder(), ManagedService.class);
 		for (final Class<? extends ManagedService> clazz : services) {
 			log.debug(clazz.getCanonicalName());
 			managedServiceBinder.addBinding()
-			        .to(clazz)
-			        .in(Singleton.class);
+			                    .to(clazz)
+			                    .in(Singleton.class);
 		}
 
 		// globally configured ObjectMapper
 		bind(ObjectMapper.class).toInstance(ObjectMapperFactory.getObjectMapper());
+
+		// all of our DAOs should be singletons
+		bind(AccountDAO.class).asEagerSingleton();
+		bind(TransactionDAO.class).asEagerSingleton();
 	}
 
 	@Provides
@@ -58,17 +62,5 @@ public class BudgeyModule extends AbstractModule {
 		final DBI dbi = new DBI("jdbc:h2:mem:budgey;DB_CLOSE_DELAY=-1");
 		dbi.setSQLLog(new SLF4JLog(dbLog, Level.INFO));
 		return dbi;
-	}
-
-	@Provides
-	@Singleton
-	public AccountDAO providesAccountDao(DBI dbi) {
-		return new AccountDAO(dbi);
-	}
-
-	@Provides
-	@Singleton
-	public TransactionDAO providesTransactionDAO(DBI dbi) {
-		return dbi.onDemand(TransactionDAO.class);
 	}
 }

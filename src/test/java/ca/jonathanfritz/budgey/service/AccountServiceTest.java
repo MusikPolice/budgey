@@ -5,7 +5,6 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.Set;
 import java.util.UUID;
 
 import org.hamcrest.core.IsEqual;
@@ -17,15 +16,15 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+
 import ca.jonathanfritz.budgey.Account;
 import ca.jonathanfritz.budgey.AccountType;
 import ca.jonathanfritz.budgey.Credentials;
 import ca.jonathanfritz.budgey.Transaction;
 import ca.jonathanfritz.budgey.guice.BudgeyModule;
-
-import com.google.inject.AbstractModule;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
 
 public class AccountServiceTest {
 
@@ -46,8 +45,7 @@ public class AccountServiceTest {
 
 	@Test
 	public void insertRetrieveTest() {
-		// there should be no accounts when we start
-		Assert.assertTrue(service.getAccounts().isEmpty());
+		final int numStartingAccounts = service.getAccounts().size();
 
 		final Random r = new Random();
 		final String accountNumber = UUID.randomUUID().toString();
@@ -72,8 +70,8 @@ public class AccountServiceTest {
 
 		// store it and retrieve it
 		service.insertAccount(account);
-		final Set<Account> accounts = service.getAccounts();
-		Assert.assertThat(accounts.size(), IsEqual.equalTo(1));
+		final List<Account> accounts = service.getAccounts();
+		Assert.assertThat(accounts.size(), IsEqual.equalTo(numStartingAccounts + 1));
 
 		// it should be identical to what we stored
 		final Account account2 = accounts.iterator().next();

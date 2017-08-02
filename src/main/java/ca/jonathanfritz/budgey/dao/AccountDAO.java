@@ -3,16 +3,17 @@ package ca.jonathanfritz.budgey.dao;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.joda.money.Money;
 import org.skife.jdbi.v2.DBI;
 
+import com.google.inject.Inject;
+
 import ca.jonathanfritz.budgey.Account;
-import ca.jonathanfritz.budgey.AccountType;
 
 public class AccountDAO {
 
 	private final DBI dbi;
 
+	@Inject
 	public AccountDAO(DBI dbi) {
 		this.dbi = dbi;
 	}
@@ -24,7 +25,7 @@ public class AccountDAO {
 				final String sql = "CREATE TABLE IF NOT EXISTS account (account_number VARCHAR(255) PRIMARY KEY, type VARCHAR(20), balance DECIMAL, currency VARCHAR(3))";
 
 				return handle.createStatement(sql)
-				        .execute() == 1;
+				             .execute() == 1;
 
 			} catch (final Exception ex) {
 				handle.rollback();
@@ -41,25 +42,31 @@ public class AccountDAO {
 	 * @param currency the ISO-4217 currency code
 	 * @return true if the operation succeeds, false otherwise
 	 */
-	public boolean insertAccount(String accountNumber, AccountType type, Money balance) {
+	public boolean insertAccount(Account account) {
 		try (AutoCommittingHandle handle = new AutoCommittingHandle(dbi)) {
 			try {
-				final String sql = "INSERT INTO account (account_number, type, balance, currency) "
-				        + "VALUES (:accountNumber, :type, :balance, :currency)";
-
-				return handle.createStatement(sql)
-				        .bind("accountNumber", accountNumber)
-				        .bind("type", type.toString())
-				        .bind("balance", balance.getAmount())
-				        .bind("currency", balance.getCurrencyUnit()
-				                .getCurrencyCode())
-				        .execute() == 1;
-
+				return insertAccount(handle, account);
 			} catch (final Exception ex) {
 				handle.rollback();
 				throw new RuntimeException("Failed to insert account", ex);
 			}
 		}
+	}
+
+	public boolean insertAccount(AutoCommittingHandle handle, Account account) {
+		final String sql = "INSERT INTO account (account_number, type, balance, currency) "
+		        + "VALUES (:accountNumber, :type, :balance, :currency)";
+
+		return handle.createStatement(sql)
+		             .bind("accountNumber", account.getAccountNumber())
+		             .bind("type", account.getType()
+		                                  .toString())
+		             .bind("balance", account.getBalance()
+		                                     .getAmount())
+		             .bind("currency", account.getBalance()
+		                                      .getCurrencyUnit()
+		                                      .getCurrencyCode())
+		             .execute() == 1;
 	}
 
 	/**
@@ -83,9 +90,9 @@ public class AccountDAO {
 	public Set<Account> getAccounts(AutoCommittingHandle handle) {
 		final String sql = "SELECT * FROM account";
 		return handle.createQuery(sql)
-		        .map(new AccountResultSetMapper())
-		        .list()
-		        .stream()
-		        .collect(Collectors.toSet());
+		             .map(new AccountResultSetMapper())
+		             .list()
+		             .stream()
+		             .collect(Collectors.toSet());
 	}
 }

@@ -1,6 +1,6 @@
 package ca.jonathanfritz.budgey.service;
 
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -42,14 +42,10 @@ public class AccountService {
 
 	public void insertAccount(Account account) {
 		// TODO: database transaction!
-		accountDao.insertAccount(account.getAccountNumber(), account.getType(), account.getBalance());
+		accountDao.insertAccount(account);
 
 		for (final Transaction transaction : account.getTransactions()) {
-			transactionDao.insertTransaction(transaction.getAccountNumber(), transaction.getDateUtc()
-			        .getMillis(), transaction.getOrder(), transaction.getDescription(), transaction.getAmount()
-			                .getAmount(), transaction.getAmount()
-			                        .getCurrencyUnit()
-			                        .getCurrencyCode());
+			transactionDao.insertTransaction(transaction);
 		}
 	}
 
@@ -57,18 +53,17 @@ public class AccountService {
 		try (AutoCommittingHandle handle = new AutoCommittingHandle(dbi)) {
 			try {
 				// make sure accounts exist
-				final Set<Account> existingAccounts = getAccounts();
-
+				final List<Account> existingAccounts = getAccounts();
 				final Set<Account> accountsToAdd = transactions.stream()
-				        .map(Transaction::getAccountNumber)
-				        .distinct()
-				        .filter(accountNumber -> existingAccounts.stream()
-				                .noneMatch(existingAccount -> existingAccount.getAccountNumber()
-				                        .equals(accountNumber)))
-				        // TODO: we don't know details about this account yet
-				        .map(accountNumber -> new Account(accountNumber, AccountType.CHECKING, Money
-				                .zero(CurrencyUnit.CAD), transactions))
-				        .collect(Collectors.toSet());
+				                                               .map(Transaction::getAccountNumber)
+				                                               .distinct()
+				                                               .filter(accountNumber -> existingAccounts.stream()
+				                                                                                        .noneMatch(existingAccount -> existingAccount.getAccountNumber()
+				                                                                                                                                     .equals(accountNumber)))
+				                                               // TODO: we don't know details about this account yet
+				                                               .map(accountNumber -> new Account(accountNumber, AccountType.CHECKING, Money
+				                                                                                                                           .zero(CurrencyUnit.CAD), transactions))
+				                                               .collect(Collectors.toSet());
 				for (final Account account : accountsToAdd) {
 					insertAccount(account);
 				}
@@ -84,16 +79,16 @@ public class AccountService {
 		}
 	}
 
-	public Set<Account> getAccounts() {
+	public List<Account> getAccounts() {
 		try (AutoCommittingHandle handle = new AutoCommittingHandle(dbi)) {
 			try {
-				final Set<Account> accounts = new HashSet<>();
+				final List<Account> accounts = new ArrayList<>();
 				for (final Account account : accountDao.getAccounts(handle)) {
 
 					// TODO: this needs to be in the database transaction
 					final List<Transaction> transactions = transactionDao.getTransactions(account.getAccountNumber());
 					accounts.add(new Account(account.getAccountNumber(), account.getType(), account
-					        .getBalance(), transactions));
+					                                                                               .getBalance(), transactions));
 				}
 				return accounts;
 			} catch (final Exception ex) {
