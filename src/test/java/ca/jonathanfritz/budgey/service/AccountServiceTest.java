@@ -74,8 +74,10 @@ public class AccountServiceTest {
 		Assert.assertThat(accounts.size(), IsEqual.equalTo(numStartingAccounts + 1));
 
 		// it should be identical to what we stored
-		final Account account2 = accounts.iterator().next();
-		Assert.assertThat(account2.getAccountNumber(), IsEqual.equalTo(account.getAccountNumber()));
+		final Account account2 = accounts.stream()
+		                                 .filter(a -> a.getAccountNumber().equals(accountNumber))
+		                                 .findFirst()
+		                                 .orElse(null);
 		Assert.assertThat(account2.getBalance(), IsEqual.equalTo(account.getBalance()));
 		Assert.assertThat(account2.getType(), IsEqual.equalTo(account.getType()));
 		Assert.assertThat(account2.getTransactions().size(), IsEqual.equalTo(numTransactions));
