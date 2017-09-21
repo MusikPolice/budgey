@@ -10,6 +10,7 @@ import java.nio.file.StandardCopyOption;
 
 import org.apache.commons.io.IOUtils;
 import org.jasypt.exceptions.EncryptionOperationNotPossibleException;
+import org.skife.jdbi.v2.DBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,6 +20,7 @@ import com.google.inject.Inject;
 import ca.jonathanfritz.budgey.Account;
 import ca.jonathanfritz.budgey.Credentials;
 import ca.jonathanfritz.budgey.Profile;
+import ca.jonathanfritz.budgey.dao.AutoCommittingHandle;
 
 public class PersistenceService implements ManagedService {
 
@@ -27,22 +29,24 @@ public class PersistenceService implements ManagedService {
 	private final CompressionService compressionService;
 	private final AccountService accountService;
 	private final ObjectMapper objectMapper;
+	private final DBI dbi;
 
-	private final static Logger log = LoggerFactory.getLogger(PersistenceService.class);
+	private static final Logger log = LoggerFactory.getLogger(PersistenceService.class);
 
 	@Inject
-	public PersistenceService(Credentials credentials, EncryptionService encryptionService, CompressionService compressionService, AccountService accountService, ObjectMapper objectMapper) {
+	public PersistenceService(Credentials credentials, EncryptionService encryptionService, CompressionService compressionService, AccountService accountService, ObjectMapper objectMapper, DBI dbi) {
 		this.credentials = credentials;
 		this.encryptionService = encryptionService;
 		this.compressionService = compressionService;
 		this.accountService = accountService;
 		this.objectMapper = objectMapper;
+		this.dbi = dbi;
 	}
 
 	@Override
 	public void start() throws IOException {
 		Profile profile = null;
-		final File profileFile = getProfileFile(false);
+		final File profileFile = getOrCreateProfileFile(false);
 		if (Files.size(profileFile.toPath()) != 0) {
 			// read the profile from disk
 			try (final FileInputStream in = new FileInputStream(profileFile)) {
@@ -51,15 +55,24 @@ public class PersistenceService implements ManagedService {
 				final byte[] data = compressionService.unzip(zipped);
 				profile = objectMapper.readValue(data, Profile.class);
 			} catch (final EncryptionOperationNotPossibleException ex) {
-				log.error("Failed to decrypt profile");
+				log.error("Failed to decrypt profile", ex);
 			}
 		}
 
-		// load profile into an in-memory database
 		accountService.initialize();
-		if (profile != null) {
-			for (final Account account : profile.getAccounts()) {
-				accountService.insertAccount(account);
+		if (profile == null) {
+			return;
+		}
+
+		try (AutoCommittingHandle handle = new AutoCommittingHandle(dbi)) {
+			try {
+				// load profile into an in-memory database
+				for (final Account account : profile.getAccounts()) {
+					accountService.insertAccountWithTransactions(handle, account);
+				}
+			} catch (final Exception ex) {
+				handle.rollback();
+				log.error("Failed to initialize in-memory database", ex);
 			}
 		}
 	}
@@ -69,12 +82,19 @@ public class PersistenceService implements ManagedService {
 			// TODO: only create backup if the profile has actually changed. This may require deserializing contents of
 			// profile.db and comparing them to the profile we're trying to save, or tracking updates in a log table
 			log.debug("Saving profile");
-			final File profileFile = getProfileFile(true);
+			final File profileFile = getOrCreateProfileFile(true);
 
 			// pull all data out of the db and put it into profile
 			final Profile profile = new Profile();
-			for (final Account account : accountService.getAccounts()) {
-				profile.addAccount(account);
+			try (AutoCommittingHandle handle = new AutoCommittingHandle(dbi)) {
+				try {
+					for (final Account account : accountService.getAccountsWithTransactions(handle)) {
+						profile.addAccount(account);
+					}
+				} catch (final Exception ex) {
+					handle.rollback();
+					log.error("Failed to dump in-memory database", ex);
+				}
 			}
 
 			// write the profile out to disk
@@ -96,6 +116,7 @@ public class PersistenceService implements ManagedService {
 	@Override
 	public void stop() {
 		save();
+		// TODO: drop and re-create database tables so that a new instance of persistence service could be started
 	}
 
 	/**
@@ -112,9 +133,9 @@ public class PersistenceService implements ManagedService {
 	 * @return a {@link File} handler that points to the profile.db file
 	 * @throws IOException if file creation or copy fails
 	 */
-	private File getProfileFile(boolean backup) throws IOException {
+	private File getOrCreateProfileFile(boolean backup) throws IOException {
 		final Path path = credentials.getPath();
-		if (!Files.exists(path)) {
+		if (!path.toFile().exists()) {
 			log.debug("Attempting to create profile file " + path.toString());
 			try {
 				Files.createDirectories(path.getParent());

@@ -2,7 +2,7 @@ package ca.jonathanfritz.budgey.util;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
@@ -26,7 +26,7 @@ import ca.jonathanfritz.budgey.dao.TransactionDAO;
 
 public class TestHelper {
 
-	private final Map<Account, Set<Transaction>> accounts = new HashMap<>();
+	private final Map<Account, List<Transaction>> accounts = new HashMap<>();
 
 	private TestHelper(Builder builder) {
 		accounts.putAll(builder.accounts);
@@ -36,8 +36,8 @@ public class TestHelper {
 		return accounts.keySet();
 	}
 
-	public Set<Transaction> getTransactions(Account account) {
-		return accounts.getOrDefault(account, new HashSet<>());
+	public List<Transaction> getTransactions(Account account) {
+		return accounts.getOrDefault(account, new ArrayList<>());
 	}
 
 	public static Builder newBuilder(Injector injector) {
@@ -46,7 +46,7 @@ public class TestHelper {
 
 	public static class Builder {
 
-		private final Map<Account, Set<Transaction>> accounts = new HashMap<>();
+		private final Map<Account, List<Transaction>> accounts = new HashMap<>();
 
 		private final Injector injector;
 
@@ -56,7 +56,7 @@ public class TestHelper {
 
 		public TransactionBuilder withAccount() {
 			final Account account = generateRandomAccount();
-			accounts.put(account, new HashSet<>());
+			accounts.put(account, new ArrayList<>());
 			return new TransactionBuilder(this, account);
 		}
 
@@ -67,7 +67,7 @@ public class TestHelper {
 
 			try (AutoCommittingHandle handle = new AutoCommittingHandle(dbi)) {
 				try {
-					for (final Entry<Account, Set<Transaction>> entry : accounts.entrySet()) {
+					for (final Entry<Account, List<Transaction>> entry : accounts.entrySet()) {
 						accountDao.insertAccount(handle, entry.getKey());
 						transactionDao.insertTransactions(handle, entry.getValue());
 					}
@@ -105,8 +105,11 @@ public class TestHelper {
 	}
 
 	public static Account generateRandomAccount() {
-		return new Account(UUID.randomUUID()
-		                       .toString(), AccountType.CHECKING, Money.zero(CurrencyUnit.CAD), new ArrayList<Transaction>());
+		return Account.newBuilder(UUID.randomUUID().toString())
+		              .setBalance(Money.zero(CurrencyUnit.CAD))
+		              .addTransactions(new ArrayList<>())
+		              .setType(AccountType.CHECKING)
+		              .build();
 	}
 
 	public static Transaction generateRandomTransaction(Account account) {

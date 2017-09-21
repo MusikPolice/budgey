@@ -62,7 +62,7 @@ public class ImportOfxCommand implements Command {
 
 		try {
 			final List<Transaction> transactions = parser.parse(Paths.get(absolutePath));
-			accountService.insertTransactions(transactions);
+			accountService.insertTransactionsAndCreateAccounts(transactions);
 		} catch (final IOException e) {
 			throw new RuntimeException("Failed to import file", e);
 		}

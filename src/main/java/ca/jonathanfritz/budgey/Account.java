@@ -1,5 +1,6 @@
 package ca.jonathanfritz.budgey;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.joda.money.Money;
@@ -16,7 +17,7 @@ public class Account {
 	private final String accountNumber;
 	private final AccountType type;
 	private final Money balance;
-	private final List<Transaction> transactions;
+	private final List<Transaction> transactions = new ArrayList<>();
 
 	/**
 	 * For Jackson
@@ -26,7 +27,14 @@ public class Account {
 		this.accountNumber = accountNumber;
 		this.type = type;
 		this.balance = balance;
-		this.transactions = transactions;
+		this.transactions.addAll(transactions);
+	}
+
+	public Account(Builder builder) {
+		accountNumber = builder.accountNumber;
+		type = builder.type;
+		balance = builder.balance;
+		transactions.addAll(builder.transactions);
 	}
 
 	public String getAccountNumber() {
@@ -73,5 +81,47 @@ public class Account {
 			return false;
 		}
 		return true;
+	}
+
+	public static Builder newBuilder(String accountNumber) {
+		return new Builder(accountNumber);
+	}
+
+	public static Builder newBuilder(Account account) {
+		return new Builder(account.accountNumber).setBalance(account.balance)
+		                                         .addTransactions(account.transactions)
+		                                         .setType(account.type);
+	}
+
+	public static class Builder {
+
+		private final String accountNumber;
+		private AccountType type;
+		private Money balance;
+		private final List<Transaction> transactions = new ArrayList<>();
+
+		public Builder(String accountNumber) {
+			this.accountNumber = accountNumber;
+		}
+
+		public Builder setType(AccountType type) {
+			this.type = type;
+			return this;
+		}
+
+		// TODO: should this be removed, and updated implicitly when transactions are added?
+		public Builder setBalance(Money balance) {
+			this.balance = balance;
+			return this;
+		}
+
+		public Builder addTransactions(List<Transaction> transactions) {
+			this.transactions.addAll(transactions);
+			return this;
+		}
+
+		public Account build() {
+			return new Account(this);
+		}
 	}
 }

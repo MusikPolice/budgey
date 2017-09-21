@@ -5,6 +5,7 @@ import java.util.List;
 import org.hamcrest.core.IsEqual;
 import org.junit.Assert;
 import org.junit.Test;
+import org.skife.jdbi.v2.DBI;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -19,33 +20,43 @@ public class TransactionDAOTest {
 
 	private final Injector injector;
 	private final TransactionDAO transactionDao;
+	private final DBI dbi;
 
 	public TransactionDAOTest() {
 		injector = Guice.createInjector(new BudgeyModule(), new CredentialsModule(null));
 		transactionDao = injector.getInstance(TransactionDAO.class);
 		transactionDao.createTable();
+		dbi = injector.getInstance(DBI.class);
 	}
 
 	@Test
 	public void addTransactionsToAccountTest() {
-		// create ten transactions
-		final TestHelper helper = TestHelper.newBuilder(injector)
-		                                    .withAccount()
-		                                    .withTransactions(10)
-		                                    .build();
-		final Account account = helper.getAccounts().stream().findFirst().get();
-		Assert.assertTrue(transactionDao.insertTransactions(helper.getTransactions(account)));
+		try (AutoCommittingHandle handle = new AutoCommittingHandle(dbi)) {
+			try {
+				// create ten transactions
+				final TestHelper helper = TestHelper.newBuilder(injector)
+				                                    .withAccount()
+				                                    .withTransactions(10)
+				                                    .build();
+				final Account account = helper.getAccounts().stream().findFirst().get();
+				transactionDao.insertTransactions(handle, helper.getTransactions(account));
 
-		// read 'em back
-		final List<Transaction> foundTransactions = transactionDao.getTransactions(account.getAccountNumber());
-		Assert.assertThat(foundTransactions.size(), IsEqual.equalTo(10));
-		for (final Transaction t1 : foundTransactions) {
-			final Transaction t2 = helper.getTransactions(account)
-			                             .stream()
-			                             .filter(t -> t.equals(t1))
-			                             .findFirst()
-			                             .orElse(null);
-			compare(t1, t2);
+				// read 'em back
+				final List<Transaction> foundTransactions = transactionDao.getTransactions(handle, account.getAccountNumber());
+				Assert.assertThat(foundTransactions.size(), IsEqual.equalTo(10));
+				for (final Transaction t1 : foundTransactions) {
+					final Transaction t2 = helper.getTransactions(account)
+					                             .stream()
+					                             .filter(t -> t.equals(t1))
+					                             .findFirst()
+					                             .orElse(null);
+					compare(t1, t2);
+				}
+
+			} catch (final Exception ex) {
+				handle.rollback();
+				throw ex;
+			}
 		}
 	}
 

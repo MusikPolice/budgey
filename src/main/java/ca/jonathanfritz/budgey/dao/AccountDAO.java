@@ -36,50 +36,46 @@ public class AccountDAO {
 
 	/**
 	 * Adds an account to the database
-	 * @param accountNumber the unique account identifier
-	 * @param type the type of account
-	 * @param balance current balance of the account
-	 * @param currency the ISO-4217 currency code
-	 * @return true if the operation succeeds, false otherwise
+	 * @param handle the database transaction to insert the account on
+	 * @param account the new account. Transactions will not be inserted by this method.
+	 * @throws RuntimeException if the insert fails
 	 */
-	public boolean insertAccount(Account account) {
-		try (AutoCommittingHandle handle = new AutoCommittingHandle(dbi)) {
-			try {
-				return insertAccount(handle, account);
-			} catch (final Exception ex) {
-				handle.rollback();
-				throw new RuntimeException("Failed to insert account", ex);
-			}
-		}
-	}
-
-	public boolean insertAccount(AutoCommittingHandle handle, Account account) {
+	public void insertAccount(AutoCommittingHandle handle, Account account) {
 		final String sql = "INSERT INTO account (account_number, type, balance, currency) "
 		        + "VALUES (:accountNumber, :type, :balance, :currency)";
 
-		return handle.createStatement(sql)
-		             .bind("accountNumber", account.getAccountNumber())
-		             .bind("type", account.getType()
-		                                  .toString())
-		             .bind("balance", account.getBalance()
-		                                     .getAmount())
-		             .bind("currency", account.getBalance()
-		                                      .getCurrencyUnit()
-		                                      .getCurrencyCode())
-		             .execute() == 1;
+		final int insertedRows = handle.createStatement(sql)
+		                               .bind("accountNumber", account.getAccountNumber())
+		                               .bind("type", account.getType().toString())
+		                               .bind("balance", account.getBalance().getAmount())
+		                               .bind("currency", account.getBalance().getCurrencyUnit().getCurrencyCode())
+		                               .execute();
+
+		if (insertedRows != 1) {
+			throw new RuntimeException("Failed to insert account");
+		}
 	}
 
 	/**
-	 * Gets all accounts in the database. Accounts returned by this function do not include transactions.
+	 * Updates an existing account
+	 * @param handle the database transaction to insert the account on
+	 * @param account the updated account. The account number cannot be changed. Transactions will not be modified by
+	 *            this function.
+	 * @throws RuntimeException if the insert fails
 	 */
-	public Set<Account> getAccounts() {
-		try (AutoCommittingHandle handle = new AutoCommittingHandle(dbi)) {
-			try {
-				return getAccounts(handle);
-			} catch (final Exception ex) {
-				handle.rollback();
-				throw new RuntimeException("Failed to get accounts", ex);
-			}
+	public void updateAccount(AutoCommittingHandle handle, Account account) {
+		final String sql = "UPDATE account SET type = :type, balance = :balance, currency = :currency "
+		        + "WHERE account_number = :accountNumber";
+
+		final int updatedRows = handle.createStatement(sql)
+		                              .bind("accountNumber", account.getAccountNumber())
+		                              .bind("type", account.getType().toString())
+		                              .bind("balance", account.getBalance().getAmount())
+		                              .bind("currency", account.getBalance().getCurrencyUnit().getCurrencyCode())
+		                              .execute();
+
+		if (updatedRows != 1) {
+			throw new RuntimeException("Failed to update account");
 		}
 	}
 
