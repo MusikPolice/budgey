@@ -1,17 +1,13 @@
 package ca.jonathanfritz.budgey;
 
-import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-
-import com.google.common.base.Joiner;
 
 /**
  * An immutable container for a set of credentials that map to a saved {@link Profile}
  */
 public class Credentials {
-
-	private final Path path;
+	private final String username;
 	private final String password;
 
 	/**
@@ -21,8 +17,8 @@ public class Credentials {
 	 *            more users to maintain separate profiles on the same machine.
 	 * @param password the encryption password that unlocks the profile file
 	 */
-	public Credentials(String username, String password) {
-		path = Paths.get(Joiner.on(File.separator).join(System.getProperty("user.home"), ".budgey", username + ".db"));
+	public Credentials(final String username, final String password) {
+		this.username = username;
 		this.password = password;
 	}
 
@@ -31,23 +27,15 @@ public class Credentials {
 	 * This overload sets a default profile name.
 	 * @param password the encryption password that unlocks the profile file
 	 */
-	public Credentials(String password) {
-		this("profile", password);
+	public Credentials(final String password) {
+		this(BudgeyFile.getDefaultProfileName(), password);
 	}
 
 	/**
-	 * @return the path to the user's saved {@link Profile} file
+	 * @return the username associated with the user's saved {@link Profile} file
 	 */
-	public Path getPath() {
-		return path;
-	}
-
-	/**
-	 * @return the path to the user's backup {@link Profile} file
-	 */
-	public Path getBackupPath() {
-		final String filename = path.getFileName().toString().substring(0, path.getFileName().toString().lastIndexOf(".db"));
-		return path.resolveSibling(filename + ".bak");
+	public String getUsername() {
+		return username;
 	}
 
 	/**
@@ -55,5 +43,25 @@ public class Credentials {
 	 */
 	public String getPassword() {
 		return password;
+	}
+
+	/**
+	 * Gets the path to the user's saved {@link Profile} file. The parent directory of the file will be created if it
+	 * does not already exist.
+	 * @return the path to the user's saved {@link Profile} file
+	 * @throws IOException if the parent directory of the file could not be created
+	 */
+	public Path getPath() throws IOException {
+		return BudgeyFile.getDefaultFilePath(username);
+	}
+
+	/**
+	 * Gets the path to the user's backup {@link Profile} file. The parent directory of the file will be created if it
+	 * does not already exist.
+	 * @return the path to the user's backup {@link Profile} file
+	 * @throws IOException if the parent directory of the file could not be created
+	 */
+	public Path getBackupPath() throws IOException {
+		return BudgeyFile.getDefaultBackupFilePath(username);
 	}
 }

@@ -38,7 +38,7 @@ public class PersistenceService implements ManagedService {
 		this.credentials = credentials;
 		this.encryptionService = encryptionService;
 		this.compressionService = compressionService;
-		this.accountService = accountService;
+		this.accountService = accountService; 
 		this.objectMapper = objectMapper;
 		this.dbi = dbi;
 	}
