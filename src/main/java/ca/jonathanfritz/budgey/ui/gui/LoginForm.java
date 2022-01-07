@@ -65,7 +65,7 @@ public class LoginForm {
 			// TODO: validation of entries?
 			return Credentials.newBuilder(passwordTextField.getText())
 			                                               .setUsername(usernameTextField.getText())
-			                                               .setPath(path) // argh! i need the path field!
+			                                               .setPath(path); // argh! i need the path field!
 		});
 		return dialog;
 	}
