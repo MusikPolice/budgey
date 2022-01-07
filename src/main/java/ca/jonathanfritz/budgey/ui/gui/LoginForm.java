@@ -5,14 +5,18 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 import ca.jonathanfritz.budgey.BudgeyFile;
+import ca.jonathanfritz.budgey.Credentials;
+import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar.ButtonData;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
@@ -32,8 +36,12 @@ public class LoginForm {
 		// private constructor to force use of static factory method
 	}
 
-	public static Stage create(final Stage primaryStage) {
-		primaryStage.setTitle("Unlock Database - Budgey");
+	public static Dialog<Credentials> create(final Stage primaryStage) {
+		final Dialog<Credentials> dialog = new Dialog<>();
+		dialog.setTitle("Unlock Database - Budgey");
+		dialog.setGraphic(new ImageView(new Image("padlock.svg", 25, 25, true, true)));
+		dialog.setHeaderText("Budgey: A budgeting tool for people with dollars and sense");
+		dialog.getDialogPane().getButtonTypes().add(new ButtonType("Login", ButtonData.OK_DONE));
 
 		final String profileName = BudgeyFile.getDefaultProfileName();
 		Path profilePath = null;
@@ -47,14 +55,19 @@ public class LoginForm {
 
 		final GridPane grid = createGridPane();
 		final ChangeListener<String> usernameChangeListener = createProfilePathControls(primaryStage, grid, profilePath);
-		createUsernameControls(grid, profileName, usernameChangeListener);
+		final TextField usernameTextField = createUsernameControls(grid, profileName, usernameChangeListener);
 		final PasswordField passwordTextField = createPasswordControls(grid);
-		createLoginButton(grid);
 
-		final Scene scene = new Scene(grid, 400, 150);
-		primaryStage.setScene(scene);
-		passwordTextField.requestFocus();
-		return primaryStage;
+		dialog.getDialogPane().setContent(grid);
+		Platform.runLater(() -> passwordTextField.requestFocus());
+		dialog.setResultConverter(dialogButton -> {
+			// TODO: this doens't respect custom profile paths
+			// TODO: validation of entries?
+			return Credentials.newBuilder(passwordTextField.getText())
+			                                               .setUsername(usernameTextField.getText())
+			                                               .setPath(path) // argh! i need the path field!
+		});
+		return dialog;
 	}
 
 	private static GridPane createGridPane() {
@@ -115,12 +128,13 @@ public class LoginForm {
 		return usernameChangeListener;
 	}
 
-	private static void createUsernameControls(final GridPane grid, final String profileName, final ChangeListener<String> usernameChangeListener) {
+	private static TextField createUsernameControls(final GridPane grid, final String profileName, final ChangeListener<String> usernameChangeListener) {
 		final Label userNameLabel = new Label("Username:");
 		final TextField userNameTextField = new TextField(profileName);
 		userNameTextField.textProperty().addListener(usernameChangeListener);
 		grid.add(userNameLabel, 0, 1);
 		grid.add(userNameTextField, 1, 1, 2, 1);
+		return userNameTextField;
 	}
 
 	private static PasswordField createPasswordControls(final GridPane grid) {
@@ -129,17 +143,5 @@ public class LoginForm {
 		grid.add(passwordLabel, 0, 2);
 		grid.add(passwordTextField, 1, 2, 2, 1);
 		return passwordTextField;
-	}
-
-	private static void createLoginButton(final GridPane grid) {
-		final Button loginButton = new Button("Login");
-		loginButton.setOnAction(new EventHandler<ActionEvent>() {
-			// TODO: inject the handler? or at least the service that it calls?
-			@Override
-			public void handle(final ActionEvent event) {
-				System.out.println("The button was clicked");
-			}
-		});
-		grid.add(loginButton, 1, 3);
 	}
 }

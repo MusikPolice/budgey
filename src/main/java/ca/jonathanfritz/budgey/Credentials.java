@@ -7,28 +7,16 @@ import java.nio.file.Path;
  * An immutable container for a set of credentials that map to a saved {@link Profile}
  */
 public class Credentials {
-	private final String username;
+	private String username = BudgeyFile.getDefaultProfileName();
 	private final String password;
+	private Path path;
 
-	/**
-	 * Creates a new instance of Credentials.<br/>
-	 * This overload supports multiple user profiles
-	 * @param username the name of the user. The resulting profile filename will include the username, allowing two or
-	 *            more users to maintain separate profiles on the same machine.
-	 * @param password the encryption password that unlocks the profile file
-	 */
-	public Credentials(final String username, final String password) {
-		this.username = username;
-		this.password = password;
-	}
-
-	/**
-	 * Creates a new instance of Credentials.<br/>
-	 * This overload sets a default profile name.
-	 * @param password the encryption password that unlocks the profile file
-	 */
-	public Credentials(final String password) {
-		this(BudgeyFile.getDefaultProfileName(), password);
+	private Credentials(final Builder builder) {
+		if (builder.username != null) {
+			username = builder.username;
+		}
+		password = builder.password;
+		path = builder.path;
 	}
 
 	/**
@@ -52,7 +40,10 @@ public class Credentials {
 	 * @throws IOException if the parent directory of the file could not be created
 	 */
 	public Path getPath() throws IOException {
-		return BudgeyFile.getDefaultFilePath(username);
+		if (path == null) {
+			path = BudgeyFile.getDefaultFilePath(username);
+		}
+		return path;
 	}
 
 	/**
@@ -63,5 +54,33 @@ public class Credentials {
 	 */
 	public Path getBackupPath() throws IOException {
 		return BudgeyFile.getDefaultBackupFilePath(username);
+	}
+
+	public static Builder newBuilder(final String password) {
+		return new Builder(password);
+	}
+
+	public static class Builder {
+		private String username;
+		private final String password;
+		private Path path;
+
+		private Builder(final String password) {
+			this.password = password;
+		}
+
+		public Builder setUsername(final String username) {
+			this.username = username;
+			return this;
+		}
+
+		public Builder setPath(final Path path) {
+			this.path = path;
+			return this;
+		}
+
+		public Credentials build() {
+			return new Credentials(this);
+		}
 	}
 }
